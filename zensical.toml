@@ -1,8 +1,8 @@
 [project]
-site_name = "python-minimal-boilerplate"
-site_description = "Modern minimal boilerplate for a Python project"
-site_author = "Your Name"
-copyright = "Copyright &copy; 2026 The authors"
+site_name = "dbt-contracts"
+site_description = "dbt project generator based on Bitol ODCS/ODPS standards"
+site_author = "Joeri Van Dingenen"
+copyright = "Copyright &copy; 2026 JVD"
 
 [project.theme]
 language = "en"
