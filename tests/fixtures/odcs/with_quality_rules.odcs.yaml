@@ -1,0 +1,28 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: ec2a112d-5cfe-49f3-8760-f9cfb4597544
+name: Online Transactions Contract
+version: 1.0.0
+status: active
+schema:
+  - name: online_transactions
+    physicalName: raw_online_transactions
+    physicalType: table
+    description: Online transaction records
+    properties:
+      - name: transaction_id
+        logicalType: string
+        physicalType: uuid
+        primaryKey: true
+        required: true
+        description: Unique transaction identifier
+      - name: amount
+        logicalType: number
+        physicalType: decimal
+        required: true
+        description: Transaction amount
+    quality:
+      - type: sql
+        description: Transaction amounts must be positive
+        query: SELECT COUNT(*) FROM online_transactions WHERE amount <= 0
+        mustBe: 0

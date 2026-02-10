@@ -1,0 +1,8 @@
+kind: DataContract
+apiVersion: v3.1.0
+name: Invalid Contract Without Required Fields
+schema:
+  - name: some_table
+    properties:
+      - name: col1
+        logicalType: string

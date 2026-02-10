@@ -1,0 +1,6 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: c2798941-1b7e-4b03-9e0d-955b1a872b32
+name: Raw Transactions Contract
+version: 1.0.0
+status: active

@@ -1,0 +1,33 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: dbb7b1eb-7628-436e-8914-2a00638ba6db
+name: Payments Contract
+version: 1.0.0
+status: active
+schema:
+  - name: payments
+    physicalName: raw_payments
+    physicalType: table
+    description: Payment transaction records
+    properties:
+      - name: payment_id
+        logicalType: string
+        physicalType: varchar
+        primaryKey: true
+        required: true
+        description: Unique payment identifier
+      - name: customer_id
+        logicalType: string
+        physicalType: varchar
+        required: true
+        description: Reference to the customer
+      - name: amount
+        logicalType: number
+        physicalType: decimal
+        required: true
+        description: Payment amount in cents
+      - name: payment_date
+        logicalType: timestamp
+        physicalType: timestamp
+        required: true
+        description: When the payment was processed

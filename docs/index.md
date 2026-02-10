@@ -16,3 +16,9 @@ ODPS (Open Data Product Standard) files define **data products** with input and 
 ::: dbt_contracts.odps.schema
 
 ::: dbt_contracts.odps.parser
+
+### ODCS Integration
+
+::: dbt_contracts.odcs.parser
+
+::: dbt_contracts.odcs.validator

@@ -33,6 +33,9 @@ dev = [
 requires = ["uv_build>=0.9.21,<0.10.0"]
 build-backend = "uv_build"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 120

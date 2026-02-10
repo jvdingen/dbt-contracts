@@ -24,6 +24,7 @@ ODPS Data Product ──> ODPS Parser ──> Resolve contractId refs
 The project is under active development. Currently implemented:
 
 - **ODPS parsing** — Pydantic models for ODPS v1.0.0 (`DataProduct`, `InputPort`, `OutputPort`, `Description`) and YAML file loading
+- **ODCS integration** — Loading ODCS contracts via `open-data-contract-standard`, resolving contracts by `contractId`, and validation (lint + test) via `datacontract-cli`
 - **Project scaffolding** — Package structure with `odps/`, `odcs/`, `generators/`, and `commands/` modules
 
 See `docs/implementation-plan.md` for the full roadmap.
@@ -54,7 +55,7 @@ Copy `.env.example` to `.env` and set `LOGFIRE_TOKEN`. Without a token, logs go 
 
 ## Usage
 
-### ODPS Parsing (available now)
+### ODPS Parsing
 
 ```python
 from pathlib import Path
@@ -69,6 +70,36 @@ for port in get_output_ports(product):
     print(f"Output: {port.name} -> contract {port.contractId}")
 ```
 
+### ODCS Loading & Resolution
+
+```python
+from pathlib import Path
+from dbt_contracts.odcs.parser import load_odcs, load_odcs_by_id
+
+# Load a specific ODCS file
+contract = load_odcs(Path("my_contract.odcs.yaml"))
+print(f"{contract.name} (v{contract.version})")
+
+# Resolve a contract by id (searches directory recursively)
+contract = load_odcs_by_id("dbb7b1eb-7628-436e-8914-2a00638ba6db", Path("contracts/"))
+```
+
+### Contract Validation
+
+```python
+from pathlib import Path
+from dbt_contracts.odcs.validator import lint_contract, test_contract
+
+# Offline lint (no database needed)
+passed, errors = lint_contract(Path("my_contract.odcs.yaml"))
+if not passed:
+    for error in errors:
+        print(f"  {error}")
+
+# Live test (requires server configuration)
+passed, errors = test_contract(Path("my_contract.odcs.yaml"))
+```
+
 ## Project Structure
 
 ```
@@ -79,7 +110,9 @@ src/dbt_contracts/
 ├── odps/                   # ODPS v1.0.0 parsing (implemented)
 │   ├── schema.py           #   Pydantic models
 │   └── parser.py           #   YAML loading + port helpers
-├── odcs/                   # ODCS v3.1.0 integration (planned)
+├── odcs/                   # ODCS v3.1.0 integration (implemented)
+│   ├── parser.py           #   Load contracts, resolve by contractId
+│   └── validator.py        #   Lint + test via datacontract-cli
 ├── generators/             # dbt artifact generation (planned)
 └── commands/               # CLI command implementations (planned)
 ```
