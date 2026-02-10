@@ -1,15 +1,22 @@
 [project]
-name = "python-minimal-boilerplate"
+name = "dbt-contracts"
 version = "0.1.0"
-description = "Add your description here"
+description = "Contract-driven dbt workflow using ODPS and ODCS"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "logfire>=4.16.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "click>=8.0",
+    "rich>=13.0",
+    "questionary>=2.0",
+    "open-data-contract-standard>=2.0.0",
+    "datacontract-cli>=0.10",
 ]
 
 [project.scripts]
-python-minimal-boilerplate = "python_minimal_boilerplate.cli:main"
+dbt-contracts = "dbt_contracts.cli:main"
 
 [dependency-groups]
 dev = [
@@ -18,6 +25,7 @@ dev = [
     "pre-commit>=4.5.1",
     "zensical>=0.0.19",
     "pytest>=9.0.2",
+    "pytest-mock>=3.0",
     "mkdocstrings-python>=2.0.1",
 ]
 
@@ -26,7 +34,7 @@ requires = ["uv_build>=0.9.21,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py312"
 line-length = 120
 fix = true
 

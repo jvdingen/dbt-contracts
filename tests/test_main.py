@@ -1,6 +1,6 @@
 """Tests for the project's CLI entry point."""
 
-from python_minimal_boilerplate import cli
+from dbt_contracts import cli
 
 
 def test_main_logs_greeting(capsys, monkeypatch) -> None:

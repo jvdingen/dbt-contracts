@@ -1,0 +1,19 @@
+apiVersion: v1.0.0
+kind: DataProduct
+name: Product With Extras
+id: 11111111-2222-3333-4444-555555555555
+domain: platform
+sbom:
+  - type: external
+    url: https://example.com/sbom
+team:
+  - username: jdoe
+    role: owner
+inputPorts:
+  - name: source_data
+    version: 1.0.0
+    contractId: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+outputPorts:
+  - name: enriched_data
+    version: 1.0.0
+    contractId: ffffffff-0000-1111-2222-333333333333

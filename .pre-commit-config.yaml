@@ -29,3 +29,11 @@ repos:
       - id: ty-check
         additional_dependencies:
           - logfire>=4.16.0
+          - pyyaml>=6.0
+          - pydantic>=2.0
+          - click>=8.0
+          - rich>=13.0
+          - questionary>=2.0
+          - open-data-contract-standard>=2.0.0
+          - datacontract-cli>=0.10
+          - pytest>=9.0.2

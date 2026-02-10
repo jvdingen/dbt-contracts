@@ -1,0 +1,23 @@
+apiVersion: v1.0.0
+kind: DataProduct
+name: Customer Data Product
+id: fbe8d147-28db-4f1d-bedf-a3fe9f458427
+domain: seller
+status: draft
+tenant: RetailCorp
+description:
+  purpose: Enterprise view of a customer.
+  limitations: No known limitations.
+  usage: Check the various artefacts for their own description.
+tags:
+  - customer
+inputPorts:
+  - name: payments
+    version: 1.0.0
+    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db
+outputPorts:
+  - name: rawtransactions
+    description: Raw Transactions
+    type: tables
+    version: 1.0.0
+    contractId: c2798941-1b7e-4b03-9e0d-955b1a872b32

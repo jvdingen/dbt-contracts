@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logfire
 
-GREETING: str = "Hello from python-minimal-boilerplate!"
+GREETING: str = "Hello from dbt-contracts!"
 
 # 'if-token-present' means nothing will be sent (and the example still works)
 # when a Logfire token/environment isn't configured.
