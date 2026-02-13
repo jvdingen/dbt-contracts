@@ -1,0 +1,19 @@
+apiVersion: v1.0.0
+kind: DataProduct
+name: Generation Test Product
+id: gen-test-0001-0002-0003-000000000001
+domain: testing
+status: draft
+inputPorts:
+  - name: payments
+    version: 1.0.0
+    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db
+outputPorts:
+  - name: customersummary
+    description: Customer Summary
+    type: tables
+    version: 1.0.0
+    contractId: a1234567-b890-cdef-1234-567890abcdef
+    inputContracts:
+      - id: dbb7b1eb-7628-436e-8914-2a00638ba6db
+        version: 1.0.0

@@ -28,6 +28,15 @@ class InputPort(BaseModel):
     customProperties: dict[str, str] | None = None  # noqa: N815
 
 
+class InputContract(BaseModel):
+    """ODPS input contract dependency — links output port to upstream contract."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    version: str
+
+
 class OutputPort(BaseModel):
     """ODPS output port — data the product produces."""
 
@@ -40,6 +49,7 @@ class OutputPort(BaseModel):
     type: str | None = None
     tags: list[str] | None = None
     customProperties: dict[str, str] | None = None  # noqa: N815
+    inputContracts: list[InputContract] | None = None  # noqa: N815
 
 
 class DataProduct(BaseModel):

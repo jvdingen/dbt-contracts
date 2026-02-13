@@ -23,9 +23,9 @@ ODPS Data Product ──> ODPS Parser ──> Resolve contractId refs
 
 The project is under active development. Currently implemented:
 
-- **ODPS parsing** — Pydantic models for ODPS v1.0.0 (`DataProduct`, `InputPort`, `OutputPort`, `Description`) and YAML file loading
+- **ODPS parsing** — Pydantic models for ODPS v1.0.0 (`DataProduct`, `InputPort`, `OutputPort`, `InputContract`) and YAML file loading
 - **ODCS integration** — Loading ODCS contracts via `open-data-contract-standard`, resolving contracts by `contractId`, and validation (lint + test) via `datacontract-cli`
-- **Project scaffolding** — Package structure with `odps/`, `odcs/`, `generators/`, and `commands/` modules
+- **dbt generation pipeline** — Export dbt sources, models, and staging SQL from ODCS contracts via `datacontract-cli`; post-process to rename sources, merge files, and rewrite `source()` refs using ODPS `inputContracts` lineage; orchestrate end-to-end generation from an ODPS data product definition
 
 See `docs/implementation-plan.md` for the full roadmap.
 
@@ -100,6 +100,47 @@ if not passed:
 passed, errors = test_contract(Path("my_contract.odcs.yaml"))
 ```
 
+### dbt Generation
+
+```python
+from pathlib import Path
+from dbt_contracts.generators.orchestrator import generate_for_product
+
+# Generate dbt artifacts from an ODPS data product
+files = generate_for_product(
+    product_path=Path("my_product.odps.yaml"),
+    odcs_dir=Path("contracts/"),
+    output_dir=Path("dbt_output/"),
+)
+
+for f in files:
+    print(f"Generated: {f}")
+# Generated: dbt_output/sources.yml
+# Generated: dbt_output/models/schema.yml
+# Generated: dbt_output/models/staging/stg_customer_summary.sql
+```
+
+The pipeline resolves each port's `contractId`, exports dbt artifacts via `datacontract-cli`, and uses the `inputContracts` lineage on output ports to rewrite `source()` refs so staging SQL points to the correct input port sources.
+
+You can also use the lower-level functions directly:
+
+```python
+from dbt_contracts.odcs.parser import load_odcs
+from dbt_contracts.generators.exporter import export_model_schema, export_sources, export_staging_sql
+from dbt_contracts.generators.postprocess import rename_source, rewrite_source_refs
+
+contract = load_odcs(Path("my_contract.odcs.yaml"))
+
+# Export individual artifacts
+sources_yaml = export_sources(contract)       # sources.yml (source name = contract UUID)
+schema_yaml = export_model_schema(contract)   # schema.yml (models + columns + constraints)
+staging_sql = export_staging_sql(contract)    # staging SQL with source() ref
+
+# Post-process
+sources_yaml = rename_source(sources_yaml, contract.id, "my_port_name")
+staging_sql = rewrite_source_refs(staging_sql, contract.id, "my_port_name")
+```
+
 ## Project Structure
 
 ```
@@ -107,13 +148,16 @@ src/dbt_contracts/
 ├── __init__.py
 ├── cli.py                  # CLI entry point
 ├── main.py                 # Greeting helpers
-├── odps/                   # ODPS v1.0.0 parsing (implemented)
-│   ├── schema.py           #   Pydantic models
+├── odps/                   # ODPS v1.0.0 parsing
+│   ├── schema.py           #   Pydantic models (DataProduct, InputPort, OutputPort, InputContract)
 │   └── parser.py           #   YAML loading + port helpers
-├── odcs/                   # ODCS v3.1.0 integration (implemented)
+├── odcs/                   # ODCS v3.1.0 integration
 │   ├── parser.py           #   Load contracts, resolve by contractId
 │   └── validator.py        #   Lint + test via datacontract-cli
-├── generators/             # dbt artifact generation (planned)
+├── generators/             # dbt artifact generation
+│   ├── exporter.py         #   Thin wrappers around datacontract-cli export
+│   ├── postprocess.py      #   Rename sources, merge files, rewrite source() refs
+│   └── orchestrator.py     #   End-to-end generation from ODPS product
 └── commands/               # CLI command implementations (planned)
 ```
 

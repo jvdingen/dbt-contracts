@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from dbt_contracts.odps.parser import get_input_ports, get_output_ports
-from dbt_contracts.odps.schema import DataProduct
+from dbt_contracts.odps.schema import DataProduct, InputContract
 
 
 class TestSimpleProduct:
@@ -213,3 +213,57 @@ class TestPortHelpers:
         product = DataProduct(name="Empty", id="eid")
         assert get_input_ports(product) == []
         assert get_output_ports(product) == []
+
+
+class TestInputContract:
+    """InputContract model and inputContracts on OutputPort."""
+
+    def test_input_contract_fields(self) -> None:
+        """InputContract accepts id and version."""
+        ic = InputContract(id="contract-123", version="1.0.0")
+        assert ic.id == "contract-123"
+        assert ic.version == "1.0.0"
+
+    def test_input_contract_extra_fields(self) -> None:
+        """InputContract accepts extra fields via extra='allow'."""
+        ic = InputContract.model_validate({"id": "c-1", "version": "1.0", "custom": "val"})
+        assert ic.model_extra is not None
+        assert ic.model_extra["custom"] == "val"
+
+    def test_output_port_with_input_contracts(self) -> None:
+        """OutputPort parses inputContracts list."""
+        product = DataProduct.model_validate(
+            {
+                "name": "P",
+                "id": "pid",
+                "outputPorts": [
+                    {
+                        "name": "out",
+                        "version": "1.0",
+                        "contractId": "out-cid",
+                        "inputContracts": [
+                            {"id": "in-cid-1", "version": "1.0"},
+                            {"id": "in-cid-2", "version": "2.0"},
+                        ],
+                    }
+                ],
+            }
+        )
+        assert product.outputPorts is not None
+        port = product.outputPorts[0]
+        assert port.inputContracts is not None
+        assert len(port.inputContracts) == 2
+        assert port.inputContracts[0].id == "in-cid-1"
+        assert port.inputContracts[1].version == "2.0"
+
+    def test_output_port_without_input_contracts(self) -> None:
+        """OutputPort without inputContracts defaults to None."""
+        product = DataProduct.model_validate(
+            {
+                "name": "P",
+                "id": "pid",
+                "outputPorts": [{"name": "out", "version": "1.0", "contractId": "cid"}],
+            }
+        )
+        assert product.outputPorts is not None
+        assert product.outputPorts[0].inputContracts is None

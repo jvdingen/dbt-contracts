@@ -1,0 +1,28 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: a1234567-b890-cdef-1234-567890abcdef
+name: Customer Summary Contract
+version: 1.0.0
+status: active
+schema:
+  - name: customer_summary
+    physicalName: customer_summary
+    physicalType: table
+    description: Aggregated customer metrics
+    properties:
+      - name: customer_id
+        logicalType: string
+        physicalType: varchar
+        primaryKey: true
+        required: true
+        description: Unique customer identifier
+      - name: total_payments
+        logicalType: number
+        physicalType: decimal
+        required: true
+        description: Total payment amount
+      - name: last_payment_date
+        logicalType: timestamp
+        physicalType: timestamp
+        required: false
+        description: Date of most recent payment
