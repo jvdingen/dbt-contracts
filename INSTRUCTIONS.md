@@ -4,22 +4,46 @@ How to use `dbt-contracts` to generate dbt artifacts from ODPS data product defi
 
 ## Prerequisites
 
-- Python 3.12+
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager
-- [just](https://github.com/casey/just?tab=readme-ov-file#installation) command runner
+- Python 3.12 or 3.13 (3.14 is not yet supported due to `duckdb` wheel availability)
+- [pipx](https://pipx.pypa.io/stable/installation/) for global CLI installation
 
 ## Installation
+
+Install `dbt-contracts` as a system-wide CLI tool:
+
+```sh
+pipx install dbt-contracts
+```
+
+If you have multiple Python versions and the default is 3.14+, specify 3.12 or 3.13 explicitly:
+
+```sh
+pipx install --python python3.12 dbt-contracts
+```
+
+To install from a local clone (for development or pre-release):
 
 ```sh
 git clone <repo-url>
 cd dbt-with-contracts
-just install
+pipx install .
 ```
 
 Verify the installation works:
 
 ```sh
 dbt-contracts --help
+```
+
+### Development setup
+
+If you want to contribute or run tests, use `uv` and `just` instead:
+
+```sh
+git clone <repo-url>
+cd dbt-with-contracts
+just install          # uv sync + pre-commit hooks
+uv run dbt-contracts --help
 ```
 
 ## Quick Start
@@ -99,6 +123,39 @@ schema:
         physicalType: decimal
         required: true
         description: Payment amount in cents
+```
+
+```yaml
+# contracts/schemas/customer_summary.odcs.yaml
+kind: DataContract
+apiVersion: v3.1.0
+id: a1234567-b890-cdef-1234-567890abcdef
+name: Customer Summary Contract
+version: 1.0.0
+status: active
+
+schema:
+  - name: customer_summary
+    physicalName: customer_summary
+    physicalType: table
+    description: Aggregated customer metrics
+    properties:
+      - name: customer_id
+        logicalType: string
+        physicalType: varchar
+        primaryKey: true
+        required: true
+        description: Unique customer identifier
+      - name: total_payments
+        logicalType: number
+        physicalType: decimal
+        required: true
+        description: Total payment amount
+      - name: last_payment_date
+        logicalType: timestamp
+        physicalType: timestamp
+        required: false
+        description: Date of most recent payment
 ```
 
 Each ODPS port's `contractId` must match the `id` field of an ODCS contract file somewhere in the schemas directory. The tool searches recursively.

@@ -1,0 +1,17 @@
+# dbt-contracts configuration
+# Uncomment and edit settings as needed.
+
+# cli_mode = "interactive"  # "interactive" or "subcommand"
+
+# [paths]
+# odps_dir = "contracts/products"
+# odcs_dir = "contracts/schemas"
+# output_dir = "output"
+
+# [generation]
+# overwrite_existing = false
+# dry_run = false
+
+# [validation]
+# default_mode = "lint"  # "lint" or "test"
+# fail_on_error = false
