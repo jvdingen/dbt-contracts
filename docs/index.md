@@ -9,16 +9,48 @@ ODPS (Open Data Product Standard) files define **data products** with input and 
 - **Input ports** become dbt sources
 - **Output ports** become dbt models with schema definitions and tests
 
-## Implemented Modules
+## CLI
 
-### ODPS Parsing
+The `dbt-contracts` command provides three subcommands:
+
+- `dbt-contracts init` — Scaffold a new project with config file and directories
+- `dbt-contracts generate` — Generate dbt artifacts from ODPS product definitions
+- `dbt-contracts validate` — Validate ODCS contracts (lint or live test)
+
+Running `dbt-contracts` without a subcommand starts the interactive menu (configurable via `cli_mode` in config).
+
+## Configuration
+
+::: dbt_contracts.config
+
+## ODPS Parsing
 
 ::: dbt_contracts.odps.schema
 
 ::: dbt_contracts.odps.parser
 
-### ODCS Integration
+## ODCS Integration
 
 ::: dbt_contracts.odcs.parser
 
 ::: dbt_contracts.odcs.validator
+
+## dbt Generation
+
+::: dbt_contracts.generators.orchestrator
+
+::: dbt_contracts.generators.exporter
+
+::: dbt_contracts.generators.postprocess
+
+## Commands
+
+::: dbt_contracts.commands.init
+
+::: dbt_contracts.commands.generate
+
+::: dbt_contracts.commands.validate
+
+## Interactive Mode
+
+::: dbt_contracts.interactive

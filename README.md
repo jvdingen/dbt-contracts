@@ -26,6 +26,7 @@ The project is under active development. Currently implemented:
 - **ODPS parsing** — Pydantic models for ODPS v1.0.0 (`DataProduct`, `InputPort`, `OutputPort`, `InputContract`) and YAML file loading
 - **ODCS integration** — Loading ODCS contracts via `open-data-contract-standard`, resolving contracts by `contractId`, and validation (lint + test) via `datacontract-cli`
 - **dbt generation pipeline** — Export dbt sources, models, and staging SQL from ODCS contracts via `datacontract-cli`; post-process to rename sources, merge files, and rewrite `source()` refs using ODPS `inputContracts` lineage; orchestrate end-to-end generation from an ODPS data product definition
+- **CLI & configuration** — Click-based CLI with `init`, `generate`, and `validate` subcommands; interactive menu mode via questionary; TOML configuration file support (`dbt-contracts.toml` or `[tool.dbt-contracts]` in `pyproject.toml`)
 
 See `docs/implementation-plan.md` for the full roadmap.
 
@@ -55,7 +56,64 @@ Copy `.env.example` to `.env` and set `LOGFIRE_TOKEN`. Without a token, logs go 
 
 ## Usage
 
-### ODPS Parsing
+### CLI
+
+```sh
+# Initialize a new project (creates config file + directories)
+dbt-contracts init
+
+# Generate dbt artifacts from all ODPS products
+dbt-contracts generate
+
+# Generate from a specific product, dry-run mode
+dbt-contracts generate --product my_product.odps.yaml --dry-run
+
+# Validate all ODCS contracts (lint by default)
+dbt-contracts validate
+
+# Validate with live data testing
+dbt-contracts validate --live
+
+# Validate a specific contract
+dbt-contracts validate --contract my_contract.odcs.yaml
+
+# Use a custom config file
+dbt-contracts --config path/to/config.toml generate
+
+# Interactive mode (default when no subcommand given)
+dbt-contracts
+```
+
+### Configuration
+
+Configuration is loaded from (in order of precedence):
+
+1. Explicit `--config` path
+2. `dbt-contracts.toml` in the project root
+3. `[tool.dbt-contracts]` section in `pyproject.toml`
+4. Defaults (no config file needed)
+
+```toml
+# dbt-contracts.toml
+cli_mode = "interactive"  # "interactive" or "subcommand"
+
+[paths]
+odps_dir = "contracts/products"
+odcs_dir = "contracts/schemas"
+output_dir = "output"
+
+[generation]
+overwrite_existing = false
+dry_run = false
+
+[validation]
+default_mode = "lint"  # "lint" or "test"
+fail_on_error = false
+```
+
+### Python API
+
+#### ODPS Parsing
 
 ```python
 from pathlib import Path
@@ -70,7 +128,7 @@ for port in get_output_ports(product):
     print(f"Output: {port.name} -> contract {port.contractId}")
 ```
 
-### ODCS Loading & Resolution
+#### ODCS Loading & Resolution
 
 ```python
 from pathlib import Path
@@ -84,7 +142,7 @@ print(f"{contract.name} (v{contract.version})")
 contract = load_odcs_by_id("dbb7b1eb-7628-436e-8914-2a00638ba6db", Path("contracts/"))
 ```
 
-### Contract Validation
+#### Contract Validation
 
 ```python
 from pathlib import Path
@@ -100,7 +158,7 @@ if not passed:
 passed, errors = test_contract(Path("my_contract.odcs.yaml"))
 ```
 
-### dbt Generation
+#### dbt Generation
 
 ```python
 from pathlib import Path
@@ -146,8 +204,9 @@ staging_sql = rewrite_source_refs(staging_sql, contract.id, "my_port_name")
 ```
 src/dbt_contracts/
 ├── __init__.py
-├── cli.py                  # CLI entry point
-├── main.py                 # Greeting helpers
+├── cli.py                  # Click CLI entry point (init, generate, validate)
+├── config.py               # Pydantic config models + TOML loading
+├── interactive.py          # Interactive menu mode (questionary)
 ├── odps/                   # ODPS v1.0.0 parsing
 │   ├── schema.py           #   Pydantic models (DataProduct, InputPort, OutputPort, InputContract)
 │   └── parser.py           #   YAML loading + port helpers
@@ -158,7 +217,10 @@ src/dbt_contracts/
 │   ├── exporter.py         #   Thin wrappers around datacontract-cli export
 │   ├── postprocess.py      #   Rename sources, merge files, rewrite source() refs
 │   └── orchestrator.py     #   End-to-end generation from ODPS product
-└── commands/               # CLI command implementations (planned)
+└── commands/               # CLI command implementations
+    ├── init.py             #   Scaffold project structure
+    ├── generate.py         #   Generate dbt artifacts
+    └── validate.py         #   Validate ODCS contracts
 ```
 
 ## Development
