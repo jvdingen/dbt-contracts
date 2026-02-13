@@ -1,22 +1,21 @@
-"""Tests for the project's CLI entry point."""
+"""Tests for the project's entry point and CLI structure."""
 
-from dbt_contracts import cli
+import click
+
+from dbt_contracts import cli as cli_module
 
 
-def test_main_logs_greeting(capsys, monkeypatch) -> None:
-    """The entry point should log and print the greeting."""
-    calls: list[tuple[str, dict[str, str]]] = []
+def test_main_is_callable() -> None:
+    """The main entry point is a callable function."""
+    assert callable(cli_module.main)
 
-    def fake_info(event: str, **kwargs):
-        calls.append((event, kwargs))
 
-    monkeypatch.setattr(cli.logfire, "info", fake_info)
+def test_cli_is_click_group() -> None:
+    """The cli object is a Click group."""
+    assert isinstance(cli_module.cli, click.Group)
 
-    cli.main()
-    captured = capsys.readouterr()
 
-    std_lines = captured.out.strip().splitlines()
-
-    assert calls == [("application.startup", {"message": cli.GREETING})]
-    assert std_lines
-    assert std_lines[-1] == cli.GREETING
+def test_cli_has_expected_commands() -> None:
+    """The CLI group has init, generate, and validate subcommands."""
+    commands = set(cli_module.cli.commands)
+    assert {"init", "generate", "validate"} <= commands
