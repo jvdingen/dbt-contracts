@@ -95,7 +95,7 @@ Lints all `.odcs.yaml` files for structural correctness (offline, no database ne
 
     Common errors and fixes
 
-- :lucide-code: **[API reference](api.md)**
+- :lucide-code: **[API reference](api/)**
 
     Python module documentation
 
