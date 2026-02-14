@@ -37,7 +37,7 @@ outputPorts:
 
 - **`inputPorts`** -- data sources consumed by this product. Each becomes a dbt source.
 - **`outputPorts`** -- data this product produces. Each becomes a dbt model.
-- **`contractId`** -- links a port to an ODCS contract file. Must match the `id` field of a `.odcs.yaml` file.
+- **`contractId`** -- links a port to an ODCS contract file. Must match the `id` field of a `.odcs.yaml` file exactly.
 - **`inputContracts`** -- on output ports, declares which input contracts feed into this output. Used to generate `{{ source() }}` refs in staging SQL.
 
 ## ODCS -- Data Contracts
@@ -129,4 +129,5 @@ schema:
 | ODPS data products | `*.odps.yaml` | `contracts/products/` |
 | ODCS data contracts | `*.odcs.yaml` | `contracts/schemas/` |
 
-These extensions are required -- the tool uses them to discover files. Both directories are searched recursively.
+!!! warning "Extensions are required"
+    The tool uses these extensions to discover files. Both directories are searched recursively. Files without the correct extension will be silently ignored.

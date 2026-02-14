@@ -61,4 +61,5 @@ odcs_dir = "contracts/schemas"
 output_dir = "dbt_output"
 ```
 
-If both `dbt-contracts.toml` and `pyproject.toml` exist, the standalone file takes precedence.
+!!! info "Precedence"
+    If both `dbt-contracts.toml` and `pyproject.toml` exist, the standalone file takes precedence.

@@ -14,11 +14,12 @@ Contract-driven dbt workflow tool using [ODPS](https://bitol-io.github.io/open-d
 pipx install dbt-contracts
 ```
 
-If your default Python is 3.14+, specify an earlier version:
+!!! tip "Python 3.14+"
+    If your default Python is 3.14+, specify an earlier version:
 
-```sh
-pipx install --python python3.12 dbt-contracts
-```
+    ```sh
+    pipx install --python python3.12 dbt-contracts
+    ```
 
 Verify:
 
@@ -72,9 +73,30 @@ Lints all `.odcs.yaml` files for structural correctness (offline, no database ne
 
 ## Next steps
 
-- [Contracts guide](contracts.md) -- ODPS and ODCS file formats with full examples
-- [CLI reference](cli.md) -- all commands, options, and interactive mode
-- [Configuration](configuration.md) -- config file format, resolution order, and all settings
-- [Architecture](architecture.md) -- how the generation pipeline works under the hood
-- [Troubleshooting](troubleshooting.md) -- common errors and fixes
-- [API reference](api.md) -- Python module documentation
+<div class="grid cards" markdown>
+
+- :lucide-file-text: **[Contracts guide](contracts.md)**
+
+    ODPS and ODCS file formats with full examples
+
+- :lucide-terminal: **[CLI reference](cli.md)**
+
+    All commands, options, and interactive mode
+
+- :lucide-settings: **[Configuration](configuration.md)**
+
+    Config file format, resolution order, and all settings
+
+- :lucide-boxes: **[Architecture](architecture.md)**
+
+    How the generation pipeline works under the hood
+
+- :lucide-alert-triangle: **[Troubleshooting](troubleshooting.md)**
+
+    Common errors and fixes
+
+- :lucide-code: **[API reference](api.md)**
+
+    Python module documentation
+
+</div>
