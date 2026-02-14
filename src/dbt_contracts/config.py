@@ -16,7 +16,8 @@ class PathsConfig(BaseModel):
 
     odps_dir: str = "contracts/products"
     odcs_dir: str = "contracts/schemas"
-    output_dir: str = "output"
+    models_dir: str = "models"
+    sources_dir: str = "sources"
 
 
 class GenerationConfig(BaseModel):
@@ -62,7 +63,8 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("cli_mode", "str", '"interactive" or "subcommand"', ("interactive", "subcommand")),
     Setting("paths.odps_dir", "str", "ODPS product directory"),
     Setting("paths.odcs_dir", "str", "ODCS contract directory"),
-    Setting("paths.output_dir", "str", "Output directory"),
+    Setting("paths.models_dir", "str", "dbt models directory"),
+    Setting("paths.sources_dir", "str", "dbt sources directory"),
     Setting("generation.overwrite_existing", "bool", "Overwrite existing files (true/false)"),
     Setting("generation.dry_run", "bool", "Dry run mode (true/false)"),
     Setting("validation.default_mode", "str", '"lint" or "test"', ("lint", "test")),

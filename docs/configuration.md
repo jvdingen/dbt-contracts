@@ -27,8 +27,11 @@ odps_dir = "contracts/products"
 # Where to find ODCS contract files (searched recursively for *.odcs.yaml)
 odcs_dir = "contracts/schemas"
 
-# Where to write generated dbt artifacts
-output_dir = "output"
+# Where to write generated dbt models (schema.yml, staging SQL)
+models_dir = "models"
+
+# Where to write generated dbt source definitions (sources.yml)
+sources_dir = "sources"
 
 [generation]
 # Whether to overwrite existing output files
@@ -58,7 +61,8 @@ cli_mode = "subcommand"
 [tool.dbt-contracts.paths]
 odps_dir = "contracts/products"
 odcs_dir = "contracts/schemas"
-output_dir = "dbt_output"
+models_dir = "models"
+sources_dir = "sources"
 ```
 
 !!! info "Precedence"

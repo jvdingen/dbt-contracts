@@ -14,10 +14,42 @@ dbt-contracts [OPTIONS] COMMAND
 
 ## `init`
 
-Scaffold a new project. Creates config file and directories. Safe to run multiple times -- skips existing files.
+Scaffold a new project with a complete dbt project structure. Creates config file, `dbt_project.yml`, `profiles.yml`, and all standard dbt directories. Safe to run multiple times -- skips existing files.
 
 ```sh
+# Interactive — prompts for database adapter
 dbt-contracts init
+
+# Non-interactive — specify adapter directly
+dbt-contracts init --adapter duckdb
+dbt-contracts init --adapter postgres
+dbt-contracts init --adapter snowflake
+dbt-contracts init --adapter bigquery
+```
+
+| Option | Description |
+|--------|-------------|
+| `--adapter` | Database adapter for `profiles.yml` (`duckdb`, `postgres`, `snowflake`, `bigquery`) |
+
+The scaffolded project structure:
+
+```
+├── dbt-contracts.toml          ← dbt-contracts config
+├── dbt_project.yml             ← dbt project config
+├── profiles.yml                ← dbt connection profile
+├── contracts/
+│   ├── products/               ← ODPS product files go here
+│   └── schemas/                ← ODCS contract files go here
+├── models/
+│   ├── staging/                ← generate writes stg_*.sql here
+│   └── schema.yml              ← generate writes model schema here
+├── sources/
+│   └── sources.yml             ← generate writes source defs here
+├── macros/
+├── seeds/
+├── tests/
+├── analyses/
+└── snapshots/
 ```
 
 ## `generate`
@@ -77,7 +109,7 @@ dbt-contracts config path
 
 # Set a configuration value
 dbt-contracts config set generation.dry_run true
-dbt-contracts config set paths.output_dir build
+dbt-contracts config set paths.models_dir build
 dbt-contracts config set cli_mode subcommand
 
 # Export resolved config to a file (e.g. to share with your team)
@@ -102,7 +134,8 @@ dbt-contracts config import team-config.toml
 | `cli_mode` | `"interactive"` / `"subcommand"` | CLI mode when run without a subcommand |
 | `paths.odps_dir` | string | ODPS product directory |
 | `paths.odcs_dir` | string | ODCS contract directory |
-| `paths.output_dir` | string | Output directory |
+| `paths.models_dir` | string | dbt models directory |
+| `paths.sources_dir` | string | dbt sources directory |
 | `generation.overwrite_existing` | boolean | Overwrite existing files |
 | `generation.dry_run` | boolean | Dry run mode |
 | `validation.default_mode` | `"lint"` / `"test"` | Default validation mode |

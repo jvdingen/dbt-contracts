@@ -24,7 +24,8 @@ def run_generate(
     """
     odps_dir = project_root / config.paths.odps_dir
     odcs_dir = project_root / config.paths.odcs_dir
-    output_dir = project_root / config.paths.output_dir
+    models_dir = project_root / config.paths.models_dir
+    sources_dir = project_root / config.paths.sources_dir
     effective_dry_run = dry_run or config.generation.dry_run
 
     if product:
@@ -50,7 +51,7 @@ def run_generate(
             any_generated = True
             continue
 
-        written = generate_for_product(pf, odcs_dir, output_dir)
+        written = generate_for_product(pf, odcs_dir, models_dir, sources_dir)
         if written:
             any_generated = True
             for path in written:

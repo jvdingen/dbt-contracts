@@ -18,10 +18,13 @@ class TestGenerationProduct:
 
     def test_writes_expected_files(self, tmp_path: Path) -> None:
         """Generates sources.yml, schema.yml, and staging SQL."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         files = generate_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
         names = [f.name for f in files]
@@ -31,13 +34,16 @@ class TestGenerationProduct:
 
     def test_sources_yml_uses_port_name(self, tmp_path: Path) -> None:
         """Source name is the input port name, not the contract UUID."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         generate_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
-        sources = yaml.safe_load((tmp_path / "sources.yml").read_text())
+        sources = yaml.safe_load((sources_dir / "sources.yml").read_text())
         source_names = [s["name"] for s in sources["sources"]]
         assert "payments" in source_names
         # UUID should NOT be used as source name
@@ -45,25 +51,31 @@ class TestGenerationProduct:
 
     def test_schema_yml_has_model(self, tmp_path: Path) -> None:
         """schema.yml contains the customer_summary model."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         generate_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
-        schema = yaml.safe_load((tmp_path / "models" / "schema.yml").read_text())
+        schema = yaml.safe_load((models_dir / "schema.yml").read_text())
         model_names = [m["name"] for m in schema["models"]]
         assert "customer_summary" in model_names
 
     def test_staging_sql_uses_input_port_source(self, tmp_path: Path) -> None:
         """Staging SQL source ref uses input port name via inputContracts lineage."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         generate_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
-        sql = (tmp_path / "models" / "staging" / "stg_customer_summary.sql").read_text()
+        sql = (models_dir / "staging" / "stg_customer_summary.sql").read_text()
         assert "source('payments'" in sql
         # The output contract UUID should NOT appear in source refs
         assert "a1234567-b890-cdef-1234-567890abcdef" not in sql
@@ -74,10 +86,13 @@ class TestSimpleProduct:
 
     def test_sources_only(self, tmp_path: Path) -> None:
         """Only sources.yml is generated when output contract has no schema."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         files = generate_for_product(
             ODPS_FIXTURES / "simple_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
         names = [f.name for f in files]
@@ -92,10 +107,13 @@ class TestMinimalProduct:
 
     def test_no_output(self, tmp_path: Path) -> None:
         """No files generated for a product with no ports."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         files = generate_for_product(
             ODPS_FIXTURES / "minimal_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
         assert files == []
@@ -119,7 +137,7 @@ class TestMissingContract:
         )
 
         with caplog.at_level(logging.WARNING):  # type: ignore[union-attr]
-            files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "out")
+            files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
 
         # Should not crash — missing contracts are skipped
         assert isinstance(files, list)
@@ -139,7 +157,7 @@ class TestMissingContract:
             "    contractId: does-not-exist-either\n"
         )
 
-        files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "out")
+        files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
         assert isinstance(files, list)
 
 
@@ -148,10 +166,13 @@ class TestInputContractsLineage:
 
     def test_with_input_contracts(self, tmp_path: Path) -> None:
         """InputContracts on output port maps to correct input source name."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
         files = generate_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
-            tmp_path,
+            models_dir,
+            sources_dir,
         )
 
         sql_files = [f for f in files if f.suffix == ".sql"]
@@ -178,7 +199,7 @@ class TestInputContractsLineage:
             "    contractId: a1234567-b890-cdef-1234-567890abcdef\n"
         )
 
-        files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "out")
+        files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
         sql_files = [f for f in files if f.suffix == ".sql"]
         assert len(sql_files) == 1
         sql = sql_files[0].read_text()

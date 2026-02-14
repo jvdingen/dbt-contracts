@@ -50,12 +50,18 @@ def cli(ctx: click.Context, config_path: Path | None, verbose: bool) -> None:
 
 
 @cli.command()
+@click.option(
+    "--adapter",
+    type=click.Choice(["duckdb", "postgres", "snowflake", "bigquery"]),
+    default=None,
+    help="Database adapter for profiles.yml.",
+)
 @click.pass_context
-def init(ctx: click.Context) -> None:
+def init(ctx: click.Context, adapter: str | None) -> None:
     """Initialize a new dbt-contracts project."""
     from dbt_contracts.commands.init import run_init
 
-    run_init(ctx.obj["project_root"], ctx.obj["console"])
+    run_init(ctx.obj["project_root"], ctx.obj["console"], adapter=adapter)
 
 
 @cli.command()

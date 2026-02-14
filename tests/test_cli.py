@@ -42,24 +42,53 @@ class TestInit:
     """Tests for the init command."""
 
     def test_creates_config_and_dirs(self, tmp_path) -> None:
-        """Init creates config file and expected directories."""
+        """Init creates config file, dbt project files, and expected directories."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            result = runner.invoke(cli, ["init"])
+            result = runner.invoke(cli, ["init", "--adapter", "duckdb"])
             assert result.exit_code == 0
-            assert (Path(td) / "dbt-contracts.toml").exists()
-            assert (Path(td) / "contracts" / "products").is_dir()
-            assert (Path(td) / "contracts" / "schemas").is_dir()
-            assert (Path(td) / "output").is_dir()
+            root = Path(td)
+            assert (root / "dbt-contracts.toml").exists()
+            assert (root / "dbt_project.yml").exists()
+            assert (root / "profiles.yml").exists()
+            assert (root / "contracts" / "products").is_dir()
+            assert (root / "contracts" / "schemas").is_dir()
+            assert (root / "models").is_dir()
+            assert (root / "models" / "staging").is_dir()
+            assert (root / "sources").is_dir()
+            assert (root / "macros").is_dir()
+            assert (root / "seeds").is_dir()
+            assert (root / "tests").is_dir()
+            assert (root / "analyses").is_dir()
+            assert (root / "snapshots").is_dir()
+
+    def test_dbt_project_yml_content(self, tmp_path) -> None:
+        """dbt_project.yml contains the sanitized project name."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+            result = runner.invoke(cli, ["init", "--adapter", "duckdb"])
+            assert result.exit_code == 0
+            content = (Path(td) / "dbt_project.yml").read_text()
+            assert "model-paths:" in content
+            assert "profile:" in content
+
+    def test_profiles_yml_uses_adapter(self, tmp_path) -> None:
+        """profiles.yml contains the selected adapter type."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+            result = runner.invoke(cli, ["init", "--adapter", "postgres"])
+            assert result.exit_code == 0
+            content = (Path(td) / "profiles.yml").read_text()
+            assert "type: postgres" in content
 
     def test_idempotent(self, tmp_path) -> None:
         """Running init twice does not fail or overwrite the config."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(cli, ["init"])
-            result = runner.invoke(cli, ["init"])
+            runner.invoke(cli, ["init", "--adapter", "duckdb"])
+            result = runner.invoke(cli, ["init", "--adapter", "duckdb"])
             assert result.exit_code == 0
-            assert "already exists" in result.output
+            assert "already exists" in result.output.lower()
 
 
 class TestGenerate:
@@ -94,7 +123,7 @@ class TestGenerate:
             (Path(td) / "contracts" / "schemas").mkdir(parents=True)
 
             with patch("dbt_contracts.commands.generate.generate_for_product") as mock_gen:
-                mock_gen.return_value = [Path(td) / "output" / "sources.yml"]
+                mock_gen.return_value = [Path(td) / "sources" / "sources.yml"]
                 result = runner.invoke(cli, ["generate"])
                 assert result.exit_code == 0
                 mock_gen.assert_called_once()

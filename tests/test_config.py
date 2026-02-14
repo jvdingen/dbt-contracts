@@ -14,7 +14,8 @@ class TestDefaults:
         p = PathsConfig()
         assert p.odps_dir == "contracts/products"
         assert p.odcs_dir == "contracts/schemas"
-        assert p.output_dir == "output"
+        assert p.models_dir == "models"
+        assert p.sources_dir == "sources"
 
     def test_generation_defaults(self) -> None:
         """GenerationConfig defaults to safe settings."""

@@ -13,12 +13,12 @@ from dbt_contracts.odps.parser import get_input_ports, get_output_ports, load_od
 logger = logging.getLogger(__name__)
 
 
-def generate_for_product(product_path: Path, odcs_dir: Path, output_dir: Path) -> list[Path]:
+def generate_for_product(product_path: Path, odcs_dir: Path, models_dir: Path, sources_dir: Path) -> list[Path]:
     """Generate dbt project artifacts from an ODPS data-product definition.
 
     Resolves each port's ``contractId`` against *odcs_dir*, exports dbt
     sources / models / staging SQL via ``datacontract-cli``, and writes the
-    post-processed results into *output_dir*.
+    post-processed results into *models_dir* and *sources_dir*.
 
     Returns:
         List of files written.
@@ -97,20 +97,20 @@ def generate_for_product(product_path: Path, odcs_dir: Path, output_dir: Path) -
 
     if source_yamls:
         merged = merge_sources(source_yamls)
-        sources_path = output_dir / "sources.yml"
+        sources_path = sources_dir / "sources.yml"
         sources_path.parent.mkdir(parents=True, exist_ok=True)
         sources_path.write_text(merged)
         written.append(sources_path)
 
     if model_yamls:
         merged = merge_models(model_yamls)
-        schema_path = output_dir / "models" / "schema.yml"
+        schema_path = models_dir / "schema.yml"
         schema_path.parent.mkdir(parents=True, exist_ok=True)
         schema_path.write_text(merged)
         written.append(schema_path)
 
     for table_name, sql in staging_sqls:
-        sql_path = output_dir / "models" / "staging" / f"stg_{table_name}.sql"
+        sql_path = models_dir / "staging" / f"stg_{table_name}.sql"
         sql_path.parent.mkdir(parents=True, exist_ok=True)
         sql_path.write_text(sql)
         written.append(sql_path)
