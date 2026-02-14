@@ -11,6 +11,12 @@ Contract-driven dbt workflow tool using [ODPS](https://bitol-io.github.io/open-d
 ## Installation
 
 ```sh
+uv tool install dbt-contracts
+```
+
+Or with pipx:
+
+```sh
 pipx install dbt-contracts
 ```
 
@@ -18,7 +24,7 @@ pipx install dbt-contracts
     If your default Python is 3.14+, specify an earlier version:
 
     ```sh
-    pipx install --python python3.12 dbt-contracts
+    uv tool install --python python3.12 dbt-contracts
     ```
 
 Verify:
@@ -35,12 +41,14 @@ dbt-contracts --help
 dbt-contracts init
 ```
 
-Creates:
+Prompts for a database adapter, then scaffolds a complete dbt project:
 
 - `dbt-contracts.toml` -- configuration file
+- `dbt_project.yml` -- dbt project config
+- `profiles.yml` -- dbt connection profile
 - `contracts/products/` -- ODPS product definitions
 - `contracts/schemas/` -- ODCS contract files
-- `output/` -- generated dbt artifacts
+- `models/`, `sources/`, `macros/`, `seeds/`, `tests/`, `analyses/`, `snapshots/`
 
 ### 2. Add your contract files
 
@@ -55,12 +63,12 @@ dbt-contracts generate
 Produces:
 
 ```
-output/
-├── sources.yml
-└── models/
-    ├── schema.yml
-    └── staging/
-        └── stg_customer_summary.sql
+sources/
+└── sources.yml
+models/
+├── schema.yml
+└── staging/
+    └── stg_customer_summary.sql
 ```
 
 ### 4. Validate contracts

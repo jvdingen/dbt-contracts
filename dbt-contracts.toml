@@ -6,7 +6,8 @@
 # [paths]
 # odps_dir = "contracts/products"
 # odcs_dir = "contracts/schemas"
-# output_dir = "output"
+# models_dir = "models"
+# sources_dir = "sources"
 
 # [generation]
 # overwrite_existing = false

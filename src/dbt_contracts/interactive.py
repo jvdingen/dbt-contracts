@@ -88,7 +88,7 @@ def _config_export_flow(config: Config, console: Console) -> Config:
 
 def _config_import_flow(project_root: Path, console: Console) -> Config:
     """Interactive sub-flow for importing configuration from a file."""
-    path = questionary.path("Import from", only_files=True).ask()
+    path = questionary.path("Import from").ask()
     if path is None:
         from dbt_contracts.config import load_config
 
