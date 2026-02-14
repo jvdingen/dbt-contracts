@@ -13,6 +13,7 @@ dependencies = [
     "questionary>=2.0",
     "open-data-contract-standard>=2.0.0",
     "datacontract-cli>=0.10",
+    "tomli_w>=1.0",
 ]
 
 [project.scripts]

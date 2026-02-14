@@ -77,6 +77,60 @@ def generate(ctx: click.Context, product: str | None, dry_run: bool) -> None:
         sys.exit(1)
 
 
+@cli.group(invoke_without_command=True)
+@click.pass_context
+def config(ctx: click.Context) -> None:
+    """Inspect and manage dbt-contracts configuration."""
+    if ctx.invoked_subcommand is None:
+        from dbt_contracts.commands.config import run_config_show
+
+        run_config_show(ctx.obj["config"], ctx.obj["console"])
+
+
+@config.command("path")
+@click.pass_context
+def config_path(ctx: click.Context) -> None:
+    """Show the active config file path."""
+    from dbt_contracts.commands.config import run_config_path
+
+    run_config_path(ctx.obj["project_root"], ctx.obj["console"])
+
+
+@config.command("set")
+@click.argument("key")
+@click.argument("value")
+@click.pass_context
+def config_set(ctx: click.Context, key: str, value: str) -> None:
+    """Set a configuration value in dbt-contracts.toml."""
+    from dbt_contracts.commands.config import run_config_set
+
+    success = run_config_set(key, value, ctx.obj["project_root"], ctx.obj["console"])
+    if not success:
+        sys.exit(1)
+
+
+@config.command("export")
+@click.argument("path", type=click.Path(path_type=Path))
+@click.pass_context
+def config_export(ctx: click.Context, path: Path) -> None:
+    """Export resolved configuration to a TOML file."""
+    from dbt_contracts.commands.config import run_config_export
+
+    run_config_export(ctx.obj["config"], path, ctx.obj["console"])
+
+
+@config.command("import")
+@click.argument("path", type=click.Path(exists=True, path_type=Path))
+@click.pass_context
+def config_import(ctx: click.Context, path: Path) -> None:
+    """Import configuration from a TOML file into dbt-contracts.toml."""
+    from dbt_contracts.commands.config import run_config_import
+
+    success = run_config_import(path, ctx.obj["project_root"], ctx.obj["console"])
+    if not success:
+        sys.exit(1)
+
+
 @cli.command()
 @click.option("--contract", default=None, help="Specific ODCS contract file to validate.")
 @click.option("--live", is_flag=True, default=False, help="Run live tests against data sources.")

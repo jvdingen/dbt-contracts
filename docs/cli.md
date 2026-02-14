@@ -64,6 +64,52 @@ dbt-contracts validate --live
 
 Exit code is 1 if any contract fails validation.
 
+## `config`
+
+Inspect and manage configuration.
+
+```sh
+# Show resolved configuration as TOML
+dbt-contracts config
+
+# Show active config file path
+dbt-contracts config path
+
+# Set a configuration value
+dbt-contracts config set generation.dry_run true
+dbt-contracts config set paths.output_dir build
+dbt-contracts config set cli_mode subcommand
+
+# Export resolved config to a file (e.g. to share with your team)
+dbt-contracts config export team-config.toml
+
+# Import config from a file
+dbt-contracts config import team-config.toml
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| *(none)* | Print the fully resolved configuration as TOML |
+| `path` | Show which config file is active, or "none" |
+| `set <key> <value>` | Update a value in `dbt-contracts.toml` (creates the file if needed) |
+| `export <path>` | Export the resolved configuration to a TOML file |
+| `import <path>` | Import configuration from a TOML file into `dbt-contracts.toml` |
+
+### Available keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `cli_mode` | `"interactive"` / `"subcommand"` | CLI mode when run without a subcommand |
+| `paths.odps_dir` | string | ODPS product directory |
+| `paths.odcs_dir` | string | ODCS contract directory |
+| `paths.output_dir` | string | Output directory |
+| `generation.overwrite_existing` | boolean | Overwrite existing files |
+| `generation.dry_run` | boolean | Dry run mode |
+| `validation.default_mode` | `"lint"` / `"test"` | Default validation mode |
+| `validation.fail_on_error` | boolean | Fail on errors |
+
+Boolean values accept `true`/`false`, `yes`/`no`, `1`/`0`. Constrained string values are validated against their allowed options. Run `config set` with an invalid key to see all available keys with descriptions.
+
 ## Interactive mode
 
 Running `dbt-contracts` without a subcommand launches an interactive menu (when `cli_mode = "interactive"`, the default):
@@ -73,9 +119,30 @@ Running `dbt-contracts` without a subcommand launches an interactive menu (when 
   Initialize project
   Generate dbt artifacts
   Validate contracts
+  Configuration
   Exit
 ```
 
-The generate and validate flows prompt you to select specific files and options. Press Ctrl+C at any prompt to go back.
+The generate and validate flows prompt you to select specific files and options.
+
+### Configuration submenu
+
+Selecting **Configuration** opens a submenu:
+
+```
+? Configuration
+  Show current configuration
+  Edit a setting
+  Export to file
+  Import from file
+  Back
+```
+
+- **Show current configuration** prints the fully resolved config as TOML.
+- **Edit a setting** presents all settings with their current values. Each setting uses the appropriate prompt: yes/no for booleans, a selection list for constrained strings (`cli_mode`, `validation.default_mode`), and free text input (pre-filled with the current value) for paths and directories.
+- **Export to file** prompts for a file path and writes the resolved configuration to it.
+- **Import from file** prompts for a file path, validates its contents, and writes it to `dbt-contracts.toml`.
+
+Press Ctrl+C at any prompt to go back.
 
 Set `cli_mode = "subcommand"` in your [configuration](configuration.md) to show help text instead.

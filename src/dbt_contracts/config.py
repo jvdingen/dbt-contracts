@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tomllib
+from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -45,6 +46,55 @@ class Config(BaseModel):
     paths: PathsConfig = PathsConfig()
     generation: GenerationConfig = GenerationConfig()
     validation: ValidationConfig = ValidationConfig()
+
+
+@dataclass(frozen=True)
+class Setting:
+    """Metadata for a single config setting used by ``config set``."""
+
+    key: str
+    type: str  # "bool" or "str"
+    description: str
+    choices: tuple[str, ...] | None = None
+
+
+SETTINGS: tuple[Setting, ...] = (
+    Setting("cli_mode", "str", '"interactive" or "subcommand"', ("interactive", "subcommand")),
+    Setting("paths.odps_dir", "str", "ODPS product directory"),
+    Setting("paths.odcs_dir", "str", "ODCS contract directory"),
+    Setting("paths.output_dir", "str", "Output directory"),
+    Setting("generation.overwrite_existing", "bool", "Overwrite existing files (true/false)"),
+    Setting("generation.dry_run", "bool", "Dry run mode (true/false)"),
+    Setting("validation.default_mode", "str", '"lint" or "test"', ("lint", "test")),
+    Setting("validation.fail_on_error", "bool", "Fail on errors (true/false)"),
+)
+
+SETTINGS_BY_KEY: dict[str, Setting] = {s.key: s for s in SETTINGS}
+
+
+def find_config_path(config_path: Path | None = None, project_root: Path | None = None) -> Path | None:
+    """Discover the active config file path without loading it.
+
+    Returns ``None`` when no config file is found.
+    """
+    if project_root is None:
+        project_root = Path.cwd()
+
+    if config_path is not None:
+        return config_path
+
+    standalone = project_root / "dbt-contracts.toml"
+    if standalone.is_file():
+        return standalone
+
+    pyproject = project_root / "pyproject.toml"
+    if pyproject.is_file():
+        with open(pyproject, "rb") as f:
+            data = tomllib.load(f)
+        if data.get("tool", {}).get("dbt-contracts") is not None:
+            return pyproject
+
+    return None
 
 
 def load_config(config_path: Path | None = None, project_root: Path | None = None) -> Config:
