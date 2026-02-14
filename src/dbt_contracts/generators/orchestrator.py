@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 from dbt_contracts.generators.exporter import export_model_schema, export_sources, export_staging_sql
@@ -13,15 +15,37 @@ from dbt_contracts.odps.parser import get_input_ports, get_output_ports, load_od
 logger = logging.getLogger(__name__)
 
 
-def generate_for_product(product_path: Path, odcs_dir: Path, models_dir: Path, sources_dir: Path) -> list[Path]:
-    """Generate dbt project artifacts from an ODPS data-product definition.
+class DriftStatus(Enum):
+    """Whether a generated file is new, unchanged, or changed relative to disk."""
 
-    Resolves each port's ``contractId`` against *odcs_dir*, exports dbt
-    sources / models / staging SQL via ``datacontract-cli``, and writes the
-    post-processed results into *models_dir* and *sources_dir*.
+    NEW = "new"
+    UNCHANGED = "unchanged"
+    CHANGED = "changed"
 
-    Returns:
-        List of files written.
+
+@dataclass(frozen=True)
+class GeneratedFile:
+    """A file planned for generation, with its content and drift status."""
+
+    path: Path
+    content: str
+    drift_status: DriftStatus
+
+
+def _compute_drift(path: Path, content: str) -> DriftStatus:
+    if not path.exists():
+        return DriftStatus.NEW
+    if path.read_text() == content:
+        return DriftStatus.UNCHANGED
+    return DriftStatus.CHANGED
+
+
+def plan_for_product(product_path: Path, odcs_dir: Path, models_dir: Path, sources_dir: Path) -> list[GeneratedFile]:
+    """Plan dbt artifact generation from an ODPS data-product definition.
+
+    Same generation logic as the old ``generate_for_product``, but instead of
+    writing files, returns ``GeneratedFile`` objects with drift status computed
+    against existing files on disk.
     """
     product = load_odps(product_path)
     input_ports = get_input_ports(product)
@@ -92,27 +116,34 @@ def generate_for_product(product_path: Path, odcs_dir: Path, models_dir: Path, s
                 continue
             staging_sqls.append((name, sql))
 
-    # --- Write output files ---
-    written: list[Path] = []
+    # --- Build GeneratedFile list with drift status ---
+    files: list[GeneratedFile] = []
 
     if source_yamls:
         merged = merge_sources(source_yamls)
         sources_path = sources_dir / "sources.yml"
-        sources_path.parent.mkdir(parents=True, exist_ok=True)
-        sources_path.write_text(merged)
-        written.append(sources_path)
+        files.append(GeneratedFile(sources_path, merged, _compute_drift(sources_path, merged)))
 
     if model_yamls:
         merged = merge_models(model_yamls)
         schema_path = models_dir / "schema.yml"
-        schema_path.parent.mkdir(parents=True, exist_ok=True)
-        schema_path.write_text(merged)
-        written.append(schema_path)
+        files.append(GeneratedFile(schema_path, merged, _compute_drift(schema_path, merged)))
 
     for table_name, sql in staging_sqls:
         sql_path = models_dir / "staging" / f"stg_{table_name}.sql"
-        sql_path.parent.mkdir(parents=True, exist_ok=True)
-        sql_path.write_text(sql)
-        written.append(sql_path)
+        files.append(GeneratedFile(sql_path, sql, _compute_drift(sql_path, sql)))
 
+    return files
+
+
+def write_files(files: list[GeneratedFile]) -> list[Path]:
+    """Write generated files to disk.
+
+    Returns list of paths written.
+    """
+    written: list[Path] = []
+    for f in files:
+        f.path.parent.mkdir(parents=True, exist_ok=True)
+        f.path.write_text(f.content)
+        written.append(f.path)
     return written

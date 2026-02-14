@@ -22,7 +22,6 @@ _DEFAULT_CONFIG = """\
 # sources_dir = "sources"
 
 # [generation]
-# overwrite_existing = false
 # dry_run = false
 
 # [validation]

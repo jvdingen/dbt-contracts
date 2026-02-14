@@ -185,7 +185,7 @@ def _generate_flow(config: Config, project_root: Path, console: Console) -> Conf
     if dry_run_answer is None:
         return config
 
-    run_generate(config, project_root, console, product=product, dry_run=dry_run_answer)
+    run_generate(config, project_root, console, product=product, dry_run=dry_run_answer, interactive=True)
     return config
 
 

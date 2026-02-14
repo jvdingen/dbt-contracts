@@ -67,8 +67,9 @@ def init(ctx: click.Context, adapter: str | None) -> None:
 @cli.command()
 @click.option("--product", default=None, help="Specific ODPS product file to generate from.")
 @click.option("--dry-run", is_flag=True, default=False, help="Show what would be generated without writing files.")
+@click.option("--yolo-mode", is_flag=True, default=False, help="Auto-accept all changes without prompting.")
 @click.pass_context
-def generate(ctx: click.Context, product: str | None, dry_run: bool) -> None:
+def generate(ctx: click.Context, product: str | None, dry_run: bool, yolo_mode: bool) -> None:
     """Generate dbt artifacts from ODPS product definitions."""
     from dbt_contracts.commands.generate import run_generate
 
@@ -78,6 +79,7 @@ def generate(ctx: click.Context, product: str | None, dry_run: bool) -> None:
         ctx.obj["console"],
         product=product,
         dry_run=dry_run,
+        yolo_mode=yolo_mode,
     )
     if not success:
         sys.exit(1)

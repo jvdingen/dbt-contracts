@@ -20,7 +20,6 @@ class TestDefaults:
     def test_generation_defaults(self) -> None:
         """GenerationConfig defaults to safe settings."""
         g = GenerationConfig()
-        assert g.overwrite_existing is False
         assert g.dry_run is False
 
     def test_validation_defaults(self) -> None:
@@ -130,5 +129,5 @@ class TestPartialConfig:
         toml.write_text("[generation]\ndry_run = true\n")
         config = load_config(project_root=tmp_path)
         assert config.generation.dry_run is True
-        assert config.generation.overwrite_existing is False  # default
+        assert config.generation.dry_run is True
         assert config.cli_mode == "interactive"  # default

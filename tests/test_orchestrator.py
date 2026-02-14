@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from dbt_contracts.generators.orchestrator import generate_for_product
+from dbt_contracts.generators.orchestrator import plan_for_product, write_files
 
 ODPS_FIXTURES = Path(__file__).parent / "fixtures" / "odps"
 ODCS_FIXTURES = Path(__file__).parent / "fixtures" / "odcs"
@@ -20,12 +20,13 @@ class TestGenerationProduct:
         """Generates sources.yml, schema.yml, and staging SQL."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        files = generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
+        files = write_files(planned)
 
         names = [f.name for f in files]
         assert "sources.yml" in names
@@ -36,12 +37,13 @@ class TestGenerationProduct:
         """Source name is the input port name, not the contract UUID."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
+        write_files(planned)
 
         sources = yaml.safe_load((sources_dir / "sources.yml").read_text())
         source_names = [s["name"] for s in sources["sources"]]
@@ -53,12 +55,13 @@ class TestGenerationProduct:
         """schema.yml contains the customer_summary model."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
+        write_files(planned)
 
         schema = yaml.safe_load((models_dir / "schema.yml").read_text())
         model_names = [m["name"] for m in schema["models"]]
@@ -68,12 +71,13 @@ class TestGenerationProduct:
         """Staging SQL source ref uses input port name via inputContracts lineage."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
+        write_files(planned)
 
         sql = (models_dir / "staging" / "stg_customer_summary.sql").read_text()
         assert "source('payments'" in sql
@@ -88,12 +92,13 @@ class TestSimpleProduct:
         """Only sources.yml is generated when output contract has no schema."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        files = generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "simple_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
+        files = write_files(planned)
 
         names = [f.name for f in files]
         assert "sources.yml" in names
@@ -109,14 +114,14 @@ class TestMinimalProduct:
         """No files generated for a product with no ports."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        files = generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "minimal_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
 
-        assert files == []
+        assert planned == []
 
 
 class TestMissingContract:
@@ -137,10 +142,10 @@ class TestMissingContract:
         )
 
         with caplog.at_level(logging.WARNING):  # type: ignore[union-attr]
-            files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
+            planned = plan_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
 
         # Should not crash — missing contracts are skipped
-        assert isinstance(files, list)
+        assert isinstance(planned, list)
         assert any("does-not-exist" in r.message for r in caplog.records)  # type: ignore[union-attr]
 
     def test_missing_output_contract_skipped(self, tmp_path: Path) -> None:
@@ -157,8 +162,8 @@ class TestMissingContract:
             "    contractId: does-not-exist-either\n"
         )
 
-        files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
-        assert isinstance(files, list)
+        planned = plan_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
+        assert isinstance(planned, list)
 
 
 class TestInputContractsLineage:
@@ -168,12 +173,13 @@ class TestInputContractsLineage:
         """InputContracts on output port maps to correct input source name."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
-        files = generate_for_product(
+        planned = plan_for_product(
             ODPS_FIXTURES / "generation_product.odps.yaml",
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
         )
+        files = write_files(planned)
 
         sql_files = [f for f in files if f.suffix == ".sql"]
         assert len(sql_files) == 1
@@ -199,7 +205,8 @@ class TestInputContractsLineage:
             "    contractId: a1234567-b890-cdef-1234-567890abcdef\n"
         )
 
-        files = generate_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
+        planned = plan_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
+        files = write_files(planned)
         sql_files = [f for f in files if f.suffix == ".sql"]
         assert len(sql_files) == 1
         sql = sql_files[0].read_text()

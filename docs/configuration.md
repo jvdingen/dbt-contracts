@@ -34,9 +34,6 @@ models_dir = "models"
 sources_dir = "sources"
 
 [generation]
-# Whether to overwrite existing output files
-overwrite_existing = false
-
 # When true, show what would be generated without writing files
 dry_run = false
 

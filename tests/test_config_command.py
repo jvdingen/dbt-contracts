@@ -19,7 +19,7 @@ class TestConfigShow:
             result = runner.invoke(cli, ["config"])
             assert result.exit_code == 0
             assert 'cli_mode = "interactive"' in result.output
-            assert "overwrite_existing = false" in result.output
+            assert "dry_run = false" in result.output
 
     def test_shows_custom_values(self, tmp_path) -> None:
         """Config reflects values from dbt-contracts.toml."""
@@ -180,7 +180,7 @@ class TestConfigExport:
             assert "Exported" in result.output
             content = (Path(td) / "my-config.toml").read_text()
             assert 'cli_mode = "interactive"' in content
-            assert "overwrite_existing = false" in content
+            assert "dry_run = false" in content
 
     def test_export_reflects_current_config(self, tmp_path) -> None:
         """Export includes values from the active config file."""

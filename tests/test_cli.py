@@ -108,13 +108,13 @@ class TestGenerate:
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             odps_dir = Path(td) / "contracts" / "products"
             odps_dir.mkdir(parents=True)
-            (odps_dir / "test.odps.yaml").write_text("apiVersion: v1\nkind: DataProduct\n")
+            (odps_dir / "test.odps.yaml").write_text("apiVersion: v1.0.0\nkind: DataProduct\nname: Test\nid: test-id\n")
             result = runner.invoke(cli, ["generate", "--dry-run"])
-            assert result.exit_code == 0
-            assert "Dry run" in result.output
+            # Product with no ports has no output, so exit code is 1
+            assert "No output" in result.output
 
     def test_calls_orchestrator(self, tmp_path) -> None:
-        """Generate calls generate_for_product for each ODPS file."""
+        """Generate calls plan_for_product for each ODPS file."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             odps_dir = Path(td) / "contracts" / "products"
@@ -122,11 +122,17 @@ class TestGenerate:
             (odps_dir / "test.odps.yaml").write_text("apiVersion: v1\n")
             (Path(td) / "contracts" / "schemas").mkdir(parents=True)
 
-            with patch("dbt_contracts.commands.generate.generate_for_product") as mock_gen:
-                mock_gen.return_value = [Path(td) / "sources" / "sources.yml"]
+            with patch("dbt_contracts.commands.generate.plan_for_product") as mock_plan:
+                mock_plan.return_value = []
                 result = runner.invoke(cli, ["generate"])
-                assert result.exit_code == 0
-                mock_gen.assert_called_once()
+                assert result.exit_code == 1  # no files generated
+                mock_plan.assert_called_once()
+
+    def test_yolo_mode_flag(self) -> None:
+        """Generate --yolo-mode flag is accepted."""
+        result = CliRunner().invoke(cli, ["generate", "--help"])
+        assert result.exit_code == 0
+        assert "--yolo-mode" in result.output
 
 
 class TestValidate:

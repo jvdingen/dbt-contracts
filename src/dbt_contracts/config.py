@@ -25,7 +25,6 @@ class GenerationConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    overwrite_existing: bool = False
     dry_run: bool = False
 
 
@@ -65,7 +64,6 @@ SETTINGS: tuple[Setting, ...] = (
     Setting("paths.odcs_dir", "str", "ODCS contract directory"),
     Setting("paths.models_dir", "str", "dbt models directory"),
     Setting("paths.sources_dir", "str", "dbt sources directory"),
-    Setting("generation.overwrite_existing", "bool", "Overwrite existing files (true/false)"),
     Setting("generation.dry_run", "bool", "Dry run mode (true/false)"),
     Setting("validation.default_mode", "str", '"lint" or "test"', ("lint", "test")),
     Setting("validation.fail_on_error", "bool", "Fail on errors (true/false)"),

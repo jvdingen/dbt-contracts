@@ -54,10 +54,14 @@ The scaffolded project structure:
 
 ## `generate`
 
-Generate dbt artifacts from ODPS product definitions.
+Generate dbt artifacts from ODPS product definitions. The command is **drift-aware**: it compares generated output against existing files on disk and reports what changed.
+
+- **New files** are written directly without prompting.
+- **Unchanged files** are skipped silently.
+- **Changed files** show a unified diff and prompt per-file (Yes / No / Yes to all remaining).
 
 ```sh
-# Generate from all products
+# Generate from all products (prompts for changed files)
 dbt-contracts generate
 
 # Generate from one specific product file
@@ -65,14 +69,20 @@ dbt-contracts generate --product my_product.odps.yaml
 
 # Preview what would be generated without writing files
 dbt-contracts generate --dry-run
+
+# Auto-accept all changes without prompting
+dbt-contracts generate --yolo-mode
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--product FILE` | Generate from a specific ODPS file (name relative to `odps_dir`, or absolute path) |
-| `--dry-run` | Preview without writing files |
+| `--dry-run` | Show drift report without writing any files |
+| `--yolo-mode` | Auto-accept all changes without prompting |
 
 Exit code is 1 if no files were generated (missing directories, no products found, etc.).
+
+In interactive mode, `--yolo-mode` is ignored — the command always prompts for changed files.
 
 ## `validate`
 
@@ -136,7 +146,6 @@ dbt-contracts config import team-config.toml
 | `paths.odcs_dir` | string | ODCS contract directory |
 | `paths.models_dir` | string | dbt models directory |
 | `paths.sources_dir` | string | dbt sources directory |
-| `generation.overwrite_existing` | boolean | Overwrite existing files |
 | `generation.dry_run` | boolean | Dry run mode |
 | `validation.default_mode` | `"lint"` / `"test"` | Default validation mode |
 | `validation.fail_on_error` | boolean | Fail on errors |
