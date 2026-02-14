@@ -100,7 +100,8 @@ cli_mode = "interactive"  # "interactive" or "subcommand"
 [paths]
 odps_dir = "contracts/products"
 odcs_dir = "contracts/schemas"
-output_dir = "output"
+models_dir = "models"
+sources_dir = "sources"
 
 [generation]
 overwrite_existing = false
@@ -168,14 +169,15 @@ from dbt_contracts.generators.orchestrator import generate_for_product
 files = generate_for_product(
     product_path=Path("my_product.odps.yaml"),
     odcs_dir=Path("contracts/"),
-    output_dir=Path("dbt_output/"),
+    models_dir=Path("models/"),
+    sources_dir=Path("sources/"),
 )
 
 for f in files:
     print(f"Generated: {f}")
-# Generated: dbt_output/sources.yml
-# Generated: dbt_output/models/schema.yml
-# Generated: dbt_output/models/staging/stg_customer_summary.sql
+# Generated: sources/sources.yml
+# Generated: models/schema.yml
+# Generated: models/staging/stg_customer_summary.sql
 ```
 
 The pipeline resolves each port's `contractId`, exports dbt artifacts via `datacontract-cli`, and uses the `inputContracts` lineage on output ports to rewrite `source()` refs so staging SQL points to the correct input port sources.
@@ -206,6 +208,7 @@ src/dbt_contracts/
 ├── __init__.py
 ├── cli.py                  # Click CLI entry point (init, generate, validate)
 ├── config.py               # Pydantic config models + TOML loading
+├── dbt_profiles.py         # Database adapter profile templates
 ├── interactive.py          # Interactive menu mode (questionary)
 ├── odps/                   # ODPS v1.0.0 parsing
 │   ├── schema.py           #   Pydantic models (DataProduct, InputPort, OutputPort, InputContract)
