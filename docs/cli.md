@@ -9,7 +9,7 @@ dbt-contracts [OPTIONS] COMMAND
 | Option | Description |
 |--------|-------------|
 | `--config PATH` | Path to a specific config file (overrides auto-discovery) |
-| `--verbose` | Enable verbose output |
+| `--verbose` | Enable verbose output -- shows additional detail during execution (e.g. which files are being processed, contract resolution steps, export progress) |
 | `--help` | Show help and exit |
 
 ## `init`

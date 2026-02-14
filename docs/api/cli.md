@@ -16,6 +16,10 @@ Click commands and interactive mode.
 
 ::: dbt_contracts.commands.validate
 
+### config
+
+::: dbt_contracts.commands.config
+
 ## Interactive Mode
 
 Menu-driven interface when running `dbt-contracts` without a subcommand.
