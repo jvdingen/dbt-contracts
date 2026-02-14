@@ -54,7 +54,15 @@ Prompts for a database adapter, then scaffolds a complete dbt project:
 
 Place ODPS product definitions in `contracts/products/` and ODCS contracts in `contracts/schemas/`. See the [contracts guide](contracts.md) for file format details and examples.
 
-### 3. Generate dbt artifacts
+### 3. Validate contracts
+
+```sh
+dbt-contracts validate
+```
+
+Lints all `.odcs.yaml` files for structural correctness (offline, no database needed).
+
+### 4. Generate dbt artifacts
 
 ```sh
 dbt-contracts generate
@@ -70,14 +78,6 @@ models/
 └── staging/
     └── stg_customer_summary.sql
 ```
-
-### 4. Validate contracts
-
-```sh
-dbt-contracts validate
-```
-
-Lints all `.odcs.yaml` files for structural correctness (offline, no database needed).
 
 ## Next steps
 

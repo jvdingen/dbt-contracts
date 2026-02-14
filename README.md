@@ -33,6 +33,12 @@ This scaffolds a complete dbt project with config file, directories, and connect
 
 Place your ODPS product files in `contracts/products/` and ODCS contract files in `contracts/schemas/`.
 
+### Validate contracts
+
+```sh
+dbt-contracts validate
+```
+
 ### Generate dbt artifacts
 
 ```sh
@@ -44,12 +50,6 @@ dbt-contracts generate --yolo-mode
 
 # Preview changes without writing
 dbt-contracts generate --dry-run
-```
-
-### Validate contracts
-
-```sh
-dbt-contracts validate
 ```
 
 ## How it works
