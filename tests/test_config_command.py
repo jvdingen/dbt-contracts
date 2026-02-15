@@ -22,10 +22,11 @@ class TestConfigShow:
             assert "dry_run = false" in result.output
 
     def test_shows_custom_values(self, tmp_path) -> None:
-        """Config reflects values from dbt-contracts.toml."""
+        """Config reflects values from contracts/dbt-contracts.toml."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            (Path(td) / "dbt-contracts.toml").write_text('[paths]\nmodels_dir = "build"\n')
+            (Path(td) / "contracts").mkdir()
+            (Path(td) / "contracts" / "dbt-contracts.toml").write_text('[paths]\nmodels_dir = "build"\n')
             result = runner.invoke(cli, ["config"])
             assert result.exit_code == 0
             assert 'models_dir = "build"' in result.output
@@ -35,10 +36,11 @@ class TestConfigPath:
     """``dbt-contracts config path`` shows the active config file."""
 
     def test_standalone_toml(self, tmp_path) -> None:
-        """Reports dbt-contracts.toml when it exists."""
+        """Reports contracts/dbt-contracts.toml when it exists."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            (Path(td) / "dbt-contracts.toml").write_text("")
+            (Path(td) / "contracts").mkdir()
+            (Path(td) / "contracts" / "dbt-contracts.toml").write_text("")
             result = runner.invoke(cli, ["config", "path"])
             assert result.exit_code == 0
             assert "dbt-contracts.toml" in result.output
@@ -62,7 +64,7 @@ class TestConfigPath:
 
 
 class TestConfigSet:
-    """``dbt-contracts config set`` updates dbt-contracts.toml."""
+    """``dbt-contracts config set`` updates contracts/dbt-contracts.toml."""
 
     def test_set_string_path(self, tmp_path) -> None:
         """Setting a path value updates the TOML file."""
@@ -71,7 +73,7 @@ class TestConfigSet:
             result = runner.invoke(cli, ["config", "set", "paths.models_dir", "build"])
             assert result.exit_code == 0
             assert "Set" in result.output
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert 'models_dir = "build"' in content
 
     def test_set_boolean_true(self, tmp_path) -> None:
@@ -80,7 +82,7 @@ class TestConfigSet:
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             result = runner.invoke(cli, ["config", "set", "generation.dry_run", "true"])
             assert result.exit_code == 0
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert "dry_run = true" in content
 
     def test_set_boolean_yes(self, tmp_path) -> None:
@@ -89,7 +91,7 @@ class TestConfigSet:
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             result = runner.invoke(cli, ["config", "set", "generation.dry_run", "yes"])
             assert result.exit_code == 0
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert "dry_run = true" in content
 
     def test_set_boolean_false(self, tmp_path) -> None:
@@ -98,7 +100,7 @@ class TestConfigSet:
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             result = runner.invoke(cli, ["config", "set", "generation.dry_run", "no"])
             assert result.exit_code == 0
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert "dry_run = false" in content
 
     def test_set_constrained_string(self, tmp_path) -> None:
@@ -107,25 +109,26 @@ class TestConfigSet:
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             result = runner.invoke(cli, ["config", "set", "cli_mode", "subcommand"])
             assert result.exit_code == 0
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert 'cli_mode = "subcommand"' in content
 
     def test_creates_toml_if_missing(self, tmp_path) -> None:
-        """Creates dbt-contracts.toml when it doesn't exist."""
+        """Creates contracts/dbt-contracts.toml when it doesn't exist."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            assert not (Path(td) / "dbt-contracts.toml").exists()
+            assert not (Path(td) / "contracts" / "dbt-contracts.toml").exists()
             result = runner.invoke(cli, ["config", "set", "cli_mode", "subcommand"])
             assert result.exit_code == 0
-            assert (Path(td) / "dbt-contracts.toml").exists()
+            assert (Path(td) / "contracts" / "dbt-contracts.toml").exists()
 
     def test_preserves_existing_values(self, tmp_path) -> None:
         """Setting one key doesn't erase other values."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            (Path(td) / "dbt-contracts.toml").write_text('cli_mode = "interactive"\n')
+            (Path(td) / "contracts").mkdir()
+            (Path(td) / "contracts" / "dbt-contracts.toml").write_text('cli_mode = "interactive"\n')
             runner.invoke(cli, ["config", "set", "paths.models_dir", "build"])
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert 'cli_mode = "interactive"' in content
             assert 'models_dir = "build"' in content
 
@@ -186,7 +189,8 @@ class TestConfigExport:
         """Export includes values from the active config file."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            (Path(td) / "dbt-contracts.toml").write_text('[paths]\nmodels_dir = "build"\n')
+            (Path(td) / "contracts").mkdir()
+            (Path(td) / "contracts" / "dbt-contracts.toml").write_text('[paths]\nmodels_dir = "build"\n')
             result = runner.invoke(cli, ["config", "export", "backup.toml"])
             assert result.exit_code == 0
             content = (Path(td) / "backup.toml").read_text()
@@ -197,7 +201,7 @@ class TestConfigImport:
     """``dbt-contracts config import`` loads config from a file."""
 
     def test_import_writes_to_dbt_contracts_toml(self, tmp_path) -> None:
-        """Import writes the source file content to dbt-contracts.toml."""
+        """Import writes the source file content to contracts/dbt-contracts.toml."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             source = Path(td) / "shared-config.toml"
@@ -205,7 +209,7 @@ class TestConfigImport:
             result = runner.invoke(cli, ["config", "import", "shared-config.toml"])
             assert result.exit_code == 0
             assert "Imported" in result.output
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert 'cli_mode = "subcommand"' in content
             assert "dry_run = true" in content
 
@@ -229,12 +233,15 @@ class TestConfigImport:
         """Exported config can be imported back without loss."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            (Path(td) / "dbt-contracts.toml").write_text('cli_mode = "subcommand"\n\n[paths]\nmodels_dir = "dist"\n')
+            (Path(td) / "contracts").mkdir()
+            (Path(td) / "contracts" / "dbt-contracts.toml").write_text(
+                'cli_mode = "subcommand"\n\n[paths]\nmodels_dir = "dist"\n'
+            )
             runner.invoke(cli, ["config", "export", "backup.toml"])
-            (Path(td) / "dbt-contracts.toml").unlink()
+            (Path(td) / "contracts" / "dbt-contracts.toml").unlink()
             result = runner.invoke(cli, ["config", "import", "backup.toml"])
             assert result.exit_code == 0
-            content = (Path(td) / "dbt-contracts.toml").read_text()
+            content = (Path(td) / "contracts" / "dbt-contracts.toml").read_text()
             assert 'cli_mode = "subcommand"' in content
             assert 'models_dir = "dist"' in content
 

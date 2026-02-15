@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import questionary
+import yaml
 from rich.console import Console
 
 from dbt_contracts.dbt_profiles import ADAPTERS
@@ -27,6 +29,16 @@ _DEFAULT_CONFIG = """\
 # [validation]
 # default_mode = "lint"  # "lint" or "test"
 # fail_on_error = false
+"""
+
+_EXISTING_PROJECT_CONFIG = """\
+# dbt-contracts configuration
+
+[paths]
+odps_dir = "contracts/products"
+odcs_dir = "contracts/schemas"
+models_dir = "{models_dir}"
+sources_dir = "{sources_dir}"
 """
 
 _DBT_PROJECT_TEMPLATE = """\
@@ -55,18 +67,83 @@ def _sanitize_project_name(name: str) -> str:
     return sanitized or "my_dbt_project"
 
 
+def _read_model_paths(dbt_project_path: Path) -> str:
+    """Read the first model-paths entry from dbt_project.yml, defaulting to 'models'."""
+    try:
+        with open(dbt_project_path) as f:
+            data = yaml.safe_load(f)
+        if isinstance(data, dict):
+            model_paths = data.get("model-paths", ["models"])
+            if isinstance(model_paths, list) and model_paths:
+                return str(model_paths[0])
+    except Exception:  # noqa: BLE001
+        pass
+    return "models"
+
+
 def run_init(project_root: Path, console: Console, adapter: str | None = None) -> None:
     """Scaffold a dbt-contracts project with a complete dbt project structure.
 
     Creates a default configuration file, dbt project files, and the expected
     directory structure.  Idempotent — skips existing files.
 
+    When an existing ``dbt_project.yml`` is detected, only creates the contracts
+    folder with configuration — skips dbt project scaffolding.
+
     If *adapter* is ``None``, prompts interactively for the database adapter.
     """
+    dbt_project_path = project_root / "dbt_project.yml"
+    existing_project = dbt_project_path.exists()
+
+    if existing_project:
+        _init_existing_project(project_root, dbt_project_path, console)
+    else:
+        _init_new_project(project_root, console, adapter)
+
+
+def _init_existing_project(project_root: Path, dbt_project_path: Path, console: Console) -> None:
+    """Initialize dbt-contracts in an existing dbt project."""
+    console.print("[bold]Existing dbt project detected.[/bold]")
+    console.print()
+
+    # Read model-paths from dbt_project.yml
+    default_models_dir = _read_model_paths(dbt_project_path)
+
+    models_dir = questionary.text("Models directory:", default=default_models_dir).ask()
+    if models_dir is None:
+        return
+
+    sources_dir = questionary.text("Sources directory:", default="sources").ask()
+    if sources_dir is None:
+        return
+
+    # --- contracts/ directories ---
+    for dirname in ("contracts/products", "contracts/schemas"):
+        dirpath = project_root / dirname
+        dirpath.mkdir(parents=True, exist_ok=True)
+        console.print(f"[green]Ensured directory[/green] {dirpath}")
+
+    # --- dbt-contracts config in contracts/ ---
+    config_path = project_root / "contracts" / "dbt-contracts.toml"
+    if config_path.exists():
+        console.print(f"[dim]Config already exists:[/dim] {config_path}")
+    else:
+        config_path.write_text(
+            _EXISTING_PROJECT_CONFIG.format(models_dir=models_dir, sources_dir=sources_dir)
+        )
+        console.print(f"[green]Created[/green] {config_path}")
+
+    console.print()
+    console.print("[bold]Next steps:[/bold]")
+    console.print("  1. Place ODPS product files in contracts/products/")
+    console.print("  2. Place ODCS contract files in contracts/schemas/")
+    console.print("  3. Run [bold]dbt-contracts generate[/bold] to create dbt artifacts")
+
+
+def _init_new_project(project_root: Path, console: Console, adapter: str | None = None) -> None:
+    """Scaffold a complete new dbt project with dbt-contracts."""
     # --- Adapter selection ---
     if adapter is None:
-        import questionary
-
         choices = [questionary.Choice(info.label, value=key) for key, info in ADAPTERS.items()]
         adapter = questionary.select("Which database adapter?", choices=choices).ask()
         if adapter is None:
@@ -78,8 +155,10 @@ def run_init(project_root: Path, console: Console, adapter: str | None = None) -
 
     project_name = _sanitize_project_name(project_root.name)
 
-    # --- dbt-contracts config ---
-    config_path = project_root / "dbt-contracts.toml"
+    # --- dbt-contracts config in contracts/ ---
+    contracts_dir = project_root / "contracts"
+    contracts_dir.mkdir(parents=True, exist_ok=True)
+    config_path = contracts_dir / "dbt-contracts.toml"
     if config_path.exists():
         console.print(f"[dim]Config already exists:[/dim] {config_path}")
     else:

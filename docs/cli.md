@@ -14,7 +14,9 @@ dbt-contracts [OPTIONS] COMMAND
 
 ## `init`
 
-Scaffold a new project with a complete dbt project structure. Creates config file, `dbt_project.yml`, `profiles.yml`, and all standard dbt directories. Safe to run multiple times -- skips existing files.
+Scaffold a new project with a complete dbt project structure. Creates config file at `contracts/dbt-contracts.toml`, `dbt_project.yml`, `profiles.yml`, and all standard dbt directories. Safe to run multiple times -- skips existing files.
+
+When an existing `dbt_project.yml` is detected, only creates the `contracts/` folder with configuration -- skips dbt project scaffolding. Reads `model-paths` from the existing project and prompts for confirmation.
 
 ```sh
 # Interactive — prompts for database adapter
@@ -34,10 +36,10 @@ dbt-contracts init --adapter bigquery
 The scaffolded project structure:
 
 ```
-├── dbt-contracts.toml          ← dbt-contracts config
 ├── dbt_project.yml             ← dbt project config
 ├── profiles.yml                ← dbt connection profile
 ├── contracts/
+│   ├── dbt-contracts.toml      ← dbt-contracts config
 │   ├── products/               ← ODPS product files go here
 │   └── schemas/                ← ODCS contract files go here
 ├── models/
@@ -133,9 +135,9 @@ dbt-contracts config import team-config.toml
 |------------|-------------|
 | *(none)* | Print the fully resolved configuration as TOML |
 | `path` | Show which config file is active, or "none" |
-| `set <key> <value>` | Update a value in `dbt-contracts.toml` (creates the file if needed) |
+| `set <key> <value>` | Update a value in `contracts/dbt-contracts.toml` (creates the file if needed) |
 | `export <path>` | Export the resolved configuration to a TOML file |
-| `import <path>` | Import configuration from a TOML file into `dbt-contracts.toml` |
+| `import <path>` | Import configuration from a TOML file into `contracts/dbt-contracts.toml` |
 
 ### Available keys
 
@@ -183,7 +185,7 @@ Selecting **Configuration** opens a submenu:
 - **Show current configuration** prints the fully resolved config as TOML.
 - **Edit a setting** presents all settings with their current values. Each setting uses the appropriate prompt: yes/no for booleans, a selection list for constrained strings (`cli_mode`, `validation.default_mode`), and free text input (pre-filled with the current value) for paths and directories.
 - **Export to file** prompts for a file path and writes the resolved configuration to it.
-- **Import from file** prompts for a file path, validates its contents, and writes it to `dbt-contracts.toml`.
+- **Import from file** prompts for a file path, validates its contents, and writes it to `contracts/dbt-contracts.toml`.
 
 Press Ctrl+C at any prompt to go back.
 

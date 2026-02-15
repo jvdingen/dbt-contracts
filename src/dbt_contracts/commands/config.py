@@ -43,7 +43,7 @@ def run_config_set(key: str, value: str, project_root: Path, console: Console) -
         console.print(f"[red]Error:[/red] {exc}")
         return False
 
-    toml_path = project_root / "dbt-contracts.toml"
+    toml_path = project_root / "contracts" / "dbt-contracts.toml"
     if toml_path.is_file():
         with open(toml_path, "rb") as f:
             data = tomllib.load(f)
@@ -60,6 +60,7 @@ def run_config_set(key: str, value: str, project_root: Path, console: Console) -
     # Validate before writing
     Config(**data)
 
+    toml_path.parent.mkdir(parents=True, exist_ok=True)
     toml_path.write_bytes(tomli_w.dumps(data).encode())
     console.print(f"[green]Set[/green] {key} = {_display_value(coerced)}")
     return True
@@ -86,7 +87,8 @@ def run_config_import(path: Path, project_root: Path, console: Console) -> bool:
 
     Config(**data)
 
-    toml_path = project_root / "dbt-contracts.toml"
+    toml_path = project_root / "contracts" / "dbt-contracts.toml"
+    toml_path.parent.mkdir(parents=True, exist_ok=True)
     toml_path.write_bytes(tomli_w.dumps(data).encode())
     console.print(f"[green]Imported[/green] configuration from {path}")
     return True

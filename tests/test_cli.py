@@ -42,13 +42,13 @@ class TestInit:
     """Tests for the init command."""
 
     def test_creates_config_and_dirs(self, tmp_path) -> None:
-        """Init creates config file, dbt project files, and expected directories."""
+        """Init creates config file in contracts/, dbt project files, and expected directories."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             result = runner.invoke(cli, ["init", "--adapter", "duckdb"])
             assert result.exit_code == 0
             root = Path(td)
-            assert (root / "dbt-contracts.toml").exists()
+            assert (root / "contracts" / "dbt-contracts.toml").exists()
             assert (root / "dbt_project.yml").exists()
             assert (root / "profiles.yml").exists()
             assert (root / "contracts" / "products").is_dir()
@@ -81,14 +81,69 @@ class TestInit:
             content = (Path(td) / "profiles.yml").read_text()
             assert "type: postgres" in content
 
-    def test_idempotent(self, tmp_path) -> None:
+    @patch("dbt_contracts.commands.init.questionary")
+    def test_idempotent(self, mock_q, tmp_path) -> None:
         """Running init twice does not fail or overwrite the config."""
+        mock_q.text.return_value.ask.side_effect = ["models", "sources"]
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             runner.invoke(cli, ["init", "--adapter", "duckdb"])
-            result = runner.invoke(cli, ["init", "--adapter", "duckdb"])
+            # Second run detects existing dbt_project.yml
+            result = runner.invoke(cli, ["init"])
             assert result.exit_code == 0
             assert "already exists" in result.output.lower()
+
+
+class TestInitExistingProject:
+    """Tests for init with an existing dbt project."""
+
+    @patch("dbt_contracts.commands.init.questionary")
+    def test_existing_project_creates_contracts_only(self, mock_q, tmp_path) -> None:
+        """Init with existing dbt_project.yml creates contracts dir and config only."""
+        mock_q.text.return_value.ask.side_effect = ["models", "sources"]
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+            root = Path(td)
+            (root / "dbt_project.yml").write_text("name: 'existing'\nmodel-paths: [\"models\"]\n")
+            result = runner.invoke(cli, ["init"])
+            assert result.exit_code == 0
+            assert "Existing dbt project detected" in result.output
+            assert (root / "contracts" / "dbt-contracts.toml").exists()
+            assert (root / "contracts" / "products").is_dir()
+            assert (root / "contracts" / "schemas").is_dir()
+            # Should NOT create dbt project files
+            assert not (root / "profiles.yml").exists()
+
+    @patch("dbt_contracts.commands.init.questionary")
+    def test_existing_project_reads_model_paths(self, mock_q, tmp_path) -> None:
+        """Init reads model-paths from dbt_project.yml and uses it as default."""
+        mock_q.text.return_value.ask.side_effect = ["my_models", "src"]
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+            root = Path(td)
+            (root / "dbt_project.yml").write_text("name: 'existing'\nmodel-paths: [\"my_models\"]\n")
+            result = runner.invoke(cli, ["init"])
+            assert result.exit_code == 0
+            content = (root / "contracts" / "dbt-contracts.toml").read_text()
+            assert 'models_dir = "my_models"' in content
+            assert 'sources_dir = "src"' in content
+
+    @patch("dbt_contracts.commands.init.questionary")
+    def test_existing_project_config_has_paths(self, mock_q, tmp_path) -> None:
+        """Config written for existing project has paths baked in (not commented out)."""
+        mock_q.text.return_value.ask.side_effect = ["models", "sources"]
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+            root = Path(td)
+            (root / "dbt_project.yml").write_text("name: 'existing'\n")
+            result = runner.invoke(cli, ["init"])
+            assert result.exit_code == 0
+            content = (root / "contracts" / "dbt-contracts.toml").read_text()
+            assert "[paths]" in content
+            assert 'models_dir = "models"' in content
 
 
 class TestGenerate:
@@ -184,7 +239,8 @@ class TestSubcommandMode:
         """Running without a subcommand in subcommand mode shows help."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            (Path(td) / "dbt-contracts.toml").write_text('cli_mode = "subcommand"\n')
+            (Path(td) / "contracts").mkdir()
+            (Path(td) / "contracts" / "dbt-contracts.toml").write_text('cli_mode = "subcommand"\n')
             result = runner.invoke(cli, [])
             assert result.exit_code == 0
             assert "Contract-driven dbt workflow" in result.output

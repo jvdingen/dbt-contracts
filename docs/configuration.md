@@ -7,14 +7,14 @@ Configuration is optional -- defaults work out of the box after `dbt-contracts i
 The tool looks for configuration in this order:
 
 1. Explicit `--config` flag
-2. `dbt-contracts.toml` in the current directory
+2. `contracts/dbt-contracts.toml` in the current directory
 3. `[tool.dbt-contracts]` section in `pyproject.toml`
 4. Built-in defaults
 
 ## Config file reference
 
 ```toml
-# dbt-contracts.toml
+# contracts/dbt-contracts.toml
 
 # How the CLI behaves when run without a subcommand.
 # "interactive" = show menu, "subcommand" = show help text.
@@ -45,7 +45,7 @@ default_mode = "lint"
 fail_on_error = false
 ```
 
-All values shown above are the defaults. The `init` command creates a config file with everything commented out.
+All values shown above are the defaults. The `init` command creates a config file at `contracts/dbt-contracts.toml` with everything commented out.
 
 ## Using pyproject.toml
 
@@ -63,4 +63,4 @@ sources_dir = "sources"
 ```
 
 !!! info "Precedence"
-    If both `dbt-contracts.toml` and `pyproject.toml` exist, the standalone file takes precedence.
+    If both `contracts/dbt-contracts.toml` and `pyproject.toml` exist, the standalone file takes precedence.

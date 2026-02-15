@@ -79,7 +79,7 @@ def _config_flow(config: Config, project_root: Path, console: Console) -> Config
 
 def _config_export_flow(config: Config, console: Console) -> Config:
     """Interactive sub-flow for exporting configuration to a file."""
-    path = questionary.path("Export to", default="dbt-contracts.toml").ask()
+    path = questionary.path("Export to", default="contracts/dbt-contracts.toml").ask()
     if path is None:
         return config
     run_config_export(config, Path(path), console)

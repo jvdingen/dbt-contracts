@@ -81,7 +81,7 @@ def find_config_path(config_path: Path | None = None, project_root: Path | None 
     if config_path is not None:
         return config_path
 
-    standalone = project_root / "dbt-contracts.toml"
+    standalone = project_root / "contracts" / "dbt-contracts.toml"
     if standalone.is_file():
         return standalone
 
@@ -99,7 +99,7 @@ def load_config(config_path: Path | None = None, project_root: Path | None = Non
     """Load configuration with resolution order.
 
     1. Explicit *config_path* if given
-    2. ``dbt-contracts.toml`` in *project_root*
+    2. ``contracts/dbt-contracts.toml`` in *project_root*
     3. ``[tool.dbt-contracts]`` in ``pyproject.toml`` in *project_root*
     4. Defaults (no config file needed)
     """

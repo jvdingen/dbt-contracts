@@ -56,7 +56,8 @@ class TestLoadFromToml:
 
     def test_standalone_toml(self, tmp_path) -> None:
         """A standalone TOML file is loaded correctly."""
-        toml = tmp_path / "dbt-contracts.toml"
+        toml = tmp_path / "contracts" / "dbt-contracts.toml"
+        toml.parent.mkdir(parents=True, exist_ok=True)
         toml.write_text('[paths]\nodps_dir = "my/products"\n')
         config = load_config(project_root=tmp_path)
         assert config.paths.odps_dir == "my/products"
@@ -64,7 +65,8 @@ class TestLoadFromToml:
 
     def test_empty_toml(self, tmp_path) -> None:
         """An empty TOML file falls back to defaults."""
-        toml = tmp_path / "dbt-contracts.toml"
+        toml = tmp_path / "contracts" / "dbt-contracts.toml"
+        toml.parent.mkdir(parents=True, exist_ok=True)
         toml.write_text("")
         config = load_config(project_root=tmp_path)
         assert config == Config()
@@ -75,7 +77,8 @@ class TestLoadFromToml:
         explicit.write_text('cli_mode = "subcommand"\n')
 
         # Also place a different file in project root — it should be ignored
-        default = tmp_path / "dbt-contracts.toml"
+        default = tmp_path / "contracts" / "dbt-contracts.toml"
+        default.parent.mkdir(parents=True, exist_ok=True)
         default.write_text('cli_mode = "interactive"\n')
 
         config = load_config(config_path=explicit, project_root=tmp_path)
@@ -105,7 +108,8 @@ class TestPrecedence:
 
     def test_standalone_wins(self, tmp_path) -> None:
         """dbt-contracts.toml is preferred over pyproject.toml."""
-        (tmp_path / "dbt-contracts.toml").write_text('cli_mode = "interactive"\n')
+        (tmp_path / "contracts").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "contracts" / "dbt-contracts.toml").write_text('cli_mode = "interactive"\n')
         (tmp_path / "pyproject.toml").write_text('[tool.dbt-contracts]\ncli_mode = "subcommand"\n')
         config = load_config(project_root=tmp_path)
         assert config.cli_mode == "interactive"
@@ -125,7 +129,8 @@ class TestPartialConfig:
 
     def test_partial_nested(self, tmp_path) -> None:
         """A partial config overrides only specified nested values."""
-        toml = tmp_path / "dbt-contracts.toml"
+        toml = tmp_path / "contracts" / "dbt-contracts.toml"
+        toml.parent.mkdir(parents=True, exist_ok=True)
         toml.write_text("[generation]\ndry_run = true\n")
         config = load_config(project_root=tmp_path)
         assert config.generation.dry_run is True

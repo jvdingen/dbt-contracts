@@ -43,9 +43,9 @@ dbt-contracts init
 
 Prompts for a database adapter, then scaffolds a complete dbt project:
 
-- `dbt-contracts.toml` -- configuration file
 - `dbt_project.yml` -- dbt project config
 - `profiles.yml` -- dbt connection profile
+- `contracts/dbt-contracts.toml` -- configuration file
 - `contracts/products/` -- ODPS product definitions
 - `contracts/schemas/` -- ODCS contract files
 - `models/`, `sources/`, `macros/`, `seeds/`, `tests/`, `analyses/`, `snapshots/`
