@@ -7,17 +7,22 @@ from datacontract.export.exporter import ExportFormat
 from open_data_contract_standard.model import OpenDataContractStandard
 
 
+def _export(contract: OpenDataContractStandard, fmt: ExportFormat) -> str:
+    """Export a contract to the given format and return a UTF-8 string."""
+    dc = DataContract(data_contract=contract)
+    result = dc.export(fmt)
+    if isinstance(result, bytes):
+        return result.decode("utf-8")
+    return result
+
+
 def export_model_schema(contract: OpenDataContractStandard) -> str:
     """Export an ODCS contract to a dbt models schema.yml YAML string.
 
     Returns a ``version: 2`` YAML document with one model per schema entry,
     including column definitions and constraints.
     """
-    dc = DataContract(data_contract=contract)
-    result = dc.export(ExportFormat.dbt)
-    if isinstance(result, bytes):
-        return result.decode("utf-8")
-    return result
+    return _export(contract, ExportFormat.dbt)
 
 
 def export_sources(contract: OpenDataContractStandard) -> str:
@@ -25,11 +30,7 @@ def export_sources(contract: OpenDataContractStandard) -> str:
 
     The source name defaults to the contract's ``id`` field.
     """
-    dc = DataContract(data_contract=contract)
-    result = dc.export(ExportFormat.dbt_sources)
-    if isinstance(result, bytes):
-        return result.decode("utf-8")
-    return result
+    return _export(contract, ExportFormat.dbt_sources)
 
 
 def export_staging_sql(contract: OpenDataContractStandard) -> str:
@@ -44,8 +45,4 @@ def export_staging_sql(contract: OpenDataContractStandard) -> str:
         msg = f"Contract '{contract.id}' has no schema — cannot generate staging SQL"
         raise RuntimeError(msg)
 
-    dc = DataContract(data_contract=contract)
-    result = dc.export(ExportFormat.dbt_staging_sql)
-    if isinstance(result, bytes):
-        return result.decode("utf-8")
-    return result
+    return _export(contract, ExportFormat.dbt_staging_sql)

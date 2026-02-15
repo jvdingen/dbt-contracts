@@ -37,8 +37,10 @@ def run_config_set(key: str, value: str, project_root: Path, console: Console) -
         _print_available_keys(console)
         return False
 
-    coerced = _coerce_value(value, setting, console)
-    if coerced is _SENTINEL:
+    try:
+        coerced = _coerce_value(value, setting)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
         return False
 
     toml_path = project_root / "dbt-contracts.toml"
@@ -90,16 +92,15 @@ def run_config_import(path: Path, project_root: Path, console: Console) -> bool:
     return True
 
 
-_SENTINEL = object()
-
 _BOOL_TRUE = {"true", "yes", "1"}
 _BOOL_FALSE = {"false", "no", "0"}
 
 
-def _coerce_value(value: str, setting: Setting, console: Console) -> object:
+def _coerce_value(value: str, setting: Setting) -> bool | str:
     """Coerce a string value to the appropriate Python type.
 
-    Returns ``_SENTINEL`` on failure (after printing an error).
+    Raises:
+        ValueError: If the value cannot be coerced to the expected type.
     """
     if setting.type == "bool":
         lower = value.lower()
@@ -107,14 +108,14 @@ def _coerce_value(value: str, setting: Setting, console: Console) -> object:
             return True
         if lower in _BOOL_FALSE:
             return False
-        console.print(f'[red]Error:[/red] "{setting.key}" must be true or false')
-        return _SENTINEL
+        msg = f'"{setting.key}" must be true or false'
+        raise ValueError(msg)
 
     # String type — check constrained choices if any
     if setting.choices and value not in setting.choices:
         choices_str = ", ".join(setting.choices)
-        console.print(f'[red]Error:[/red] "{setting.key}" must be one of: {choices_str}')
-        return _SENTINEL
+        msg = f'"{setting.key}" must be one of: {choices_str}'
+        raise ValueError(msg)
 
     return value
 

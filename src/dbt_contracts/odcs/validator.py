@@ -15,6 +15,14 @@ def _format_check_error(check: object) -> str:
     return f"{name}: {reason}"
 
 
+def _run_validation(contract_path: Path, method_name: str) -> tuple[bool, list[str]]:
+    """Run a datacontract-cli validation method and collect errors."""
+    dc = DataContract(data_contract_file=str(contract_path))
+    result = getattr(dc, method_name)()
+    errors = [_format_check_error(c) for c in (result.checks or []) if c.result != ResultEnum.passed]
+    return result.has_passed(), errors
+
+
 def lint_contract(contract_path: Path) -> tuple[bool, list[str]]:
     """Validate ODCS contract YAML structure offline (no database needed).
 
@@ -22,10 +30,7 @@ def lint_contract(contract_path: Path) -> tuple[bool, list[str]]:
         A tuple of (success, errors) where success is True if all checks passed
         and errors is a list of human-readable messages for any failed checks.
     """
-    dc = DataContract(data_contract_file=str(contract_path))
-    result = dc.lint()
-    errors = [_format_check_error(c) for c in (result.checks or []) if c.result != ResultEnum.passed]
-    return result.has_passed(), errors
+    return _run_validation(contract_path, "lint")
 
 
 def test_contract(contract_path: Path) -> tuple[bool, list[str]]:
@@ -35,7 +40,4 @@ def test_contract(contract_path: Path) -> tuple[bool, list[str]]:
         A tuple of (success, errors) where success is True if all checks passed
         and errors is a list of human-readable messages for any failed checks.
     """
-    dc = DataContract(data_contract_file=str(contract_path))
-    result = dc.test()
-    errors = [_format_check_error(c) for c in (result.checks or []) if c.result != ResultEnum.passed]
-    return result.has_passed(), errors
+    return _run_validation(contract_path, "test")

@@ -3,7 +3,6 @@
 import pytest
 from pydantic import ValidationError
 
-from dbt_contracts.odps.parser import get_input_ports, get_output_ports
 from dbt_contracts.odps.schema import DataProduct, InputContract
 
 
@@ -179,11 +178,11 @@ class TestValidationErrors:
             )
 
 
-class TestPortHelpers:
-    """get_input_ports() / get_output_ports() helpers work."""
+class TestPortAccess:
+    """Direct port access with fallback to empty list."""
 
-    def test_get_input_ports(self) -> None:
-        """get_input_ports returns the input port list."""
+    def test_input_ports(self) -> None:
+        """InputPorts returns the input port list."""
         product = DataProduct.model_validate(
             {
                 "name": "P",
@@ -191,12 +190,12 @@ class TestPortHelpers:
                 "inputPorts": [{"name": "a", "version": "1.0", "contractId": "cid"}],
             }
         )
-        ports = get_input_ports(product)
+        ports = product.inputPorts or []
         assert len(ports) == 1
         assert ports[0].name == "a"
 
-    def test_get_output_ports(self) -> None:
-        """get_output_ports returns the output port list."""
+    def test_output_ports(self) -> None:
+        """OutputPorts returns the output port list."""
         product = DataProduct.model_validate(
             {
                 "name": "P",
@@ -204,15 +203,15 @@ class TestPortHelpers:
                 "outputPorts": [{"name": "b", "version": "2.0", "contractId": "cid"}],
             }
         )
-        ports = get_output_ports(product)
+        ports = product.outputPorts or []
         assert len(ports) == 1
         assert ports[0].name == "b"
 
-    def test_get_ports_none(self) -> None:
-        """Helpers return empty list when ports are None."""
+    def test_ports_none(self) -> None:
+        """Ports default to None, fallback to empty list."""
         product = DataProduct(name="Empty", id="eid")
-        assert get_input_ports(product) == []
-        assert get_output_ports(product) == []
+        assert (product.inputPorts or []) == []
+        assert (product.outputPorts or []) == []
 
 
 class TestInputContract:

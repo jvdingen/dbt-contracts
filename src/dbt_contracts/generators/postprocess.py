@@ -20,22 +20,23 @@ def rename_source(source_yaml: str, old_name: str, new_name: str) -> str:
     return yaml.safe_dump(data, sort_keys=False)
 
 
-def merge_sources(yamls: list[str]) -> str:
-    """Merge multiple dbt sources.yml YAML strings into one document."""
-    sources: list[dict] = []
+def _merge_yaml_lists(yamls: list[str], key: str) -> str:
+    """Merge multiple dbt YAML strings by concatenating a top-level list key."""
+    items: list[dict] = []
     for y in yamls:
         data = yaml.safe_load(y)
-        sources.extend(data.get("sources", []))
-    return yaml.safe_dump({"version": 2, "sources": sources}, sort_keys=False)
+        items.extend(data.get(key, []))
+    return yaml.safe_dump({"version": 2, key: items}, sort_keys=False)
+
+
+def merge_sources(yamls: list[str]) -> str:
+    """Merge multiple dbt sources.yml YAML strings into one document."""
+    return _merge_yaml_lists(yamls, "sources")
 
 
 def merge_models(yamls: list[str]) -> str:
     """Merge multiple dbt schema.yml YAML strings into one document."""
-    models: list[dict] = []
-    for y in yamls:
-        data = yaml.safe_load(y)
-        models.extend(data.get("models", []))
-    return yaml.safe_dump({"version": 2, "models": models}, sort_keys=False)
+    return _merge_yaml_lists(yamls, "models")
 
 
 def rewrite_source_refs(sql: str, old_name: str, new_name: str) -> str:

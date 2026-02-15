@@ -9,10 +9,14 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 
-class PathsConfig(BaseModel):
-    """Directory paths for contract and output files."""
+class StrictModel(BaseModel):
+    """Base model that forbids extra fields."""
 
     model_config = ConfigDict(extra="forbid")
+
+
+class PathsConfig(StrictModel):
+    """Directory paths for contract and output files."""
 
     odps_dir: str = "contracts/products"
     odcs_dir: str = "contracts/schemas"
@@ -20,27 +24,21 @@ class PathsConfig(BaseModel):
     sources_dir: str = "sources"
 
 
-class GenerationConfig(BaseModel):
+class GenerationConfig(StrictModel):
     """Settings for dbt artifact generation."""
-
-    model_config = ConfigDict(extra="forbid")
 
     dry_run: bool = False
 
 
-class ValidationConfig(BaseModel):
+class ValidationConfig(StrictModel):
     """Settings for contract validation."""
-
-    model_config = ConfigDict(extra="forbid")
 
     default_mode: str = "lint"
     fail_on_error: bool = False
 
 
-class Config(BaseModel):
+class Config(StrictModel):
     """Top-level configuration for dbt-contracts."""
-
-    model_config = ConfigDict(extra="forbid")
 
     cli_mode: str = "interactive"
     paths: PathsConfig = PathsConfig()
@@ -108,28 +106,18 @@ def load_config(config_path: Path | None = None, project_root: Path | None = Non
     if project_root is None:
         project_root = Path.cwd()
 
-    if config_path is not None:
-        return _load_from_toml(config_path)
+    resolved = find_config_path(config_path=config_path, project_root=project_root)
 
-    standalone = project_root / "dbt-contracts.toml"
-    if standalone.is_file():
-        return _load_from_toml(standalone)
+    if resolved is None:
+        return Config()
 
-    pyproject = project_root / "pyproject.toml"
-    if pyproject.is_file():
-        with open(pyproject, "rb") as f:
-            data = tomllib.load(f)
-        tool_section = data.get("tool", {}).get("dbt-contracts")
-        if tool_section is not None:
-            return Config(**tool_section)
-
-    return Config()
-
-
-def _load_from_toml(path: Path) -> Config:
-    """Load a Config from a standalone TOML file."""
-    with open(path, "rb") as f:
+    with open(resolved, "rb") as f:
         data = tomllib.load(f)
+
+    # pyproject.toml stores config under [tool.dbt-contracts]
+    if resolved.name == "pyproject.toml":
+        data = data.get("tool", {}).get("dbt-contracts", {})
+
     if not data:
         return Config()
     return Config(**data)

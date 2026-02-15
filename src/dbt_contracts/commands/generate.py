@@ -113,6 +113,13 @@ def _show_drift_summary(gen_file: GeneratedFile, console: Console) -> None:
             console.print(line)
 
 
+def _write_generated_file(gen_file: GeneratedFile, console: Console) -> None:
+    """Write a single generated file to disk and print a status message."""
+    gen_file.path.parent.mkdir(parents=True, exist_ok=True)
+    gen_file.path.write_text(gen_file.content)
+    console.print(f"[green]Updated[/green] {gen_file.path}")
+
+
 def _prompt_changed_files(changed: list[GeneratedFile], console: Console) -> list[Path]:
     """Prompt per-file for changed files. Returns paths that were written."""
     written: list[Path] = []
@@ -120,10 +127,8 @@ def _prompt_changed_files(changed: list[GeneratedFile], console: Console) -> lis
 
     for f in changed:
         if accept_all:
-            f.path.parent.mkdir(parents=True, exist_ok=True)
-            f.path.write_text(f.content)
+            _write_generated_file(f, console)
             written.append(f.path)
-            console.print(f"[green]Updated[/green] {f.path}")
             continue
 
         _show_drift_summary(f, console)
@@ -135,16 +140,12 @@ def _prompt_changed_files(changed: list[GeneratedFile], console: Console) -> lis
         if answer is None:
             break
         elif answer == "Yes":
-            f.path.parent.mkdir(parents=True, exist_ok=True)
-            f.path.write_text(f.content)
+            _write_generated_file(f, console)
             written.append(f.path)
-            console.print(f"[green]Updated[/green] {f.path}")
         elif answer == "Yes to all remaining":
             accept_all = True
-            f.path.parent.mkdir(parents=True, exist_ok=True)
-            f.path.write_text(f.content)
+            _write_generated_file(f, console)
             written.append(f.path)
-            console.print(f"[green]Updated[/green] {f.path}")
         # "No" → skip
 
     return written

@@ -11,7 +11,7 @@ from dbt_contracts.commands.config import run_config_export, run_config_import, 
 from dbt_contracts.commands.generate import run_generate
 from dbt_contracts.commands.init import run_init
 from dbt_contracts.commands.validate import run_validate
-from dbt_contracts.config import SETTINGS, Config
+from dbt_contracts.config import SETTINGS, Config, load_config
 
 
 def run_interactive(config: Config, project_root: Path, console: Console) -> None:
@@ -90,61 +90,54 @@ def _config_import_flow(project_root: Path, console: Console) -> Config:
     """Interactive sub-flow for importing configuration from a file."""
     path = questionary.path("Import from").ask()
     if path is None:
-        from dbt_contracts.config import load_config
-
         return load_config(project_root=project_root)
 
     target = Path(path)
     if not target.is_file():
         console.print(f"[red]Error:[/red] File not found: {target}")
-        from dbt_contracts.config import load_config
-
         return load_config(project_root=project_root)
 
     run_config_import(target, project_root, console)
-
-    from dbt_contracts.config import load_config
-
     return load_config(project_root=project_root)
+
+
+def _ask_setting_value(setting_key: str, setting_type: str, choices: tuple[str, ...] | None, current: str | bool) -> str | None:
+    """Prompt for a new setting value. Returns the string representation, or None if cancelled."""
+    if setting_type == "bool":
+        assert isinstance(current, bool)
+        result = questionary.confirm(f"{setting_key}", default=current).ask()
+        if result is None:
+            return None
+        return "true" if result else "false"
+
+    if choices:
+        assert isinstance(current, str)
+        return questionary.select(f"{setting_key}", choices=list(choices), default=current).ask()
+
+    return questionary.text(f"{setting_key}", default=str(current)).ask()
 
 
 def _config_edit_flow(config: Config, project_root: Path, console: Console) -> Config:
     """Interactive sub-flow for editing a configuration value."""
-    choices = [
+    menu_choices = [
         questionary.Choice(
             f"{s.key}  ({_format_current(config, s.key)})",
             value=s.key,
         )
         for s in SETTINGS
     ]
-    selected_key = questionary.select("Which setting?", choices=choices).ask()
+    selected_key = questionary.select("Which setting?", choices=menu_choices).ask()
     if selected_key is None:
         return config
 
     setting = next(s for s in SETTINGS if s.key == selected_key)
     current = _get_current_value(config, selected_key)
 
-    if setting.type == "bool":
-        assert isinstance(current, bool)
-        new_value = questionary.confirm(f"{selected_key}", default=current).ask()
-        if new_value is None:
-            return config
-        value_str = "true" if new_value else "false"
-    elif setting.choices:
-        assert isinstance(current, str)
-        new_value = questionary.select(f"{selected_key}", choices=list(setting.choices), default=current).ask()
-        if new_value is None:
-            return config
-        value_str = new_value
-    else:
-        new_value = questionary.text(f"{selected_key}", default=str(current)).ask()
-        if new_value is None:
-            return config
-        value_str = new_value
+    value_str = _ask_setting_value(selected_key, setting.type, setting.choices, current)
+    if value_str is None:
+        return config
 
     if run_config_set(selected_key, value_str, project_root, console):
-        from dbt_contracts.config import load_config
-
         return load_config(project_root=project_root)
     return config
 
