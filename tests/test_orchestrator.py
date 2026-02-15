@@ -17,7 +17,7 @@ class TestGenerationProduct:
     """generation_product has 1 input + 1 output with inputContracts lineage."""
 
     def test_writes_expected_files(self, tmp_path: Path) -> None:
-        """Generates sources.yml, schema.yml, and staging SQL."""
+        """Generates sources.yml, schema.yml, and model SQL."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
         planned = plan_for_product(
@@ -25,13 +25,14 @@ class TestGenerationProduct:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
         files = write_files(planned)
 
         names = [f.name for f in files]
         assert "sources.yml" in names
         assert "schema.yml" in names
-        assert "stg_customer_summary.sql" in names
+        assert "customer_summary.sql" in names
 
     def test_sources_yml_uses_port_name(self, tmp_path: Path) -> None:
         """Source name is the input port name, not the contract UUID."""
@@ -42,6 +43,7 @@ class TestGenerationProduct:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
         write_files(planned)
 
@@ -60,6 +62,7 @@ class TestGenerationProduct:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
         write_files(planned)
 
@@ -67,8 +70,8 @@ class TestGenerationProduct:
         model_names = [m["name"] for m in schema["models"]]
         assert "customer_summary" in model_names
 
-    def test_staging_sql_uses_input_port_source(self, tmp_path: Path) -> None:
-        """Staging SQL source ref uses input port name via inputContracts lineage."""
+    def test_model_sql_uses_input_port_source(self, tmp_path: Path) -> None:
+        """Model SQL source ref uses input port name via inputContracts lineage."""
         models_dir = tmp_path / "models"
         sources_dir = tmp_path / "sources"
         planned = plan_for_product(
@@ -76,13 +79,32 @@ class TestGenerationProduct:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
         write_files(planned)
 
-        sql = (models_dir / "staging" / "stg_customer_summary.sql").read_text()
-        assert "source('payments'" in sql
+        sql = (models_dir / "customer_summary.sql").read_text()
+        assert "source('payments', 'payments')" in sql
         # The output contract UUID should NOT appear in source refs
         assert "a1234567-b890-cdef-1234-567890abcdef" not in sql
+
+    def test_model_sql_has_columns(self, tmp_path: Path) -> None:
+        """Model SQL contains all columns from the output contract."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            ODPS_FIXTURES / "generation_product.odps.yaml",
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=ODPS_FIXTURES,
+        )
+        write_files(planned)
+
+        sql = (models_dir / "customer_summary.sql").read_text()
+        assert "customer_id" in sql
+        assert "total_payments" in sql
+        assert "last_payment_date" in sql
 
 
 class TestSimpleProduct:
@@ -97,14 +119,14 @@ class TestSimpleProduct:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
         files = write_files(planned)
 
         names = [f.name for f in files]
         assert "sources.yml" in names
-        # schema.yml should still be written (with empty models from no-schema contract)
-        # but no staging SQL should be generated
-        assert "stg_" not in " ".join(names)
+        # No model SQL should be generated
+        assert not any(n.endswith(".sql") for n in names)
 
 
 class TestMinimalProduct:
@@ -119,6 +141,7 @@ class TestMinimalProduct:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
 
         assert planned == []
@@ -178,6 +201,7 @@ class TestInputContractsLineage:
             ODCS_FIXTURES,
             models_dir,
             sources_dir,
+            odps_dir=ODPS_FIXTURES,
         )
         files = write_files(planned)
 
@@ -185,30 +209,112 @@ class TestInputContractsLineage:
         assert len(sql_files) == 1
         sql = sql_files[0].read_text()
         # Source ref should use input port name "payments" (mapped via inputContracts)
-        assert "source('payments'" in sql
+        assert "source('payments', 'payments')" in sql
 
-    def test_fallback_to_first_input_port(self, tmp_path: Path) -> None:
-        """Output port without inputContracts falls back to first input port."""
-        product_yaml = tmp_path / "product.odps.yaml"
-        product_yaml.write_text(
+
+class TestRefDetection:
+    """When an input contract is another product's output, use ref() instead of source()."""
+
+    def test_ref_for_upstream_product_output(self, tmp_path: Path) -> None:
+        """Input contract matching another product's output generates ref()."""
+        # Create an "upstream" product whose output contract is
+        # the same as our product's input contract
+        upstream_yaml = tmp_path / "products" / "upstream.odps.yaml"
+        upstream_yaml.parent.mkdir(parents=True, exist_ok=True)
+        upstream_yaml.write_text(
             "apiVersion: v1.0.0\n"
             "kind: DataProduct\n"
-            "name: No Lineage Product\n"
-            "id: no-lineage-id\n"
+            "name: Upstream Product\n"
+            "id: upstream-001\n"
+            "outputPorts:\n"
+            "  - name: upstream_output\n"
+            "    version: 1.0.0\n"
+            "    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db\n"
+        )
+
+        # Create a downstream product that consumes the upstream output
+        downstream_yaml = tmp_path / "products" / "downstream.odps.yaml"
+        downstream_yaml.write_text(
+            "apiVersion: v1.0.0\n"
+            "kind: DataProduct\n"
+            "name: Downstream Product\n"
+            "id: downstream-001\n"
             "inputPorts:\n"
-            "  - name: default_input\n"
+            "  - name: from_upstream\n"
             "    version: 1.0.0\n"
             "    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db\n"
             "outputPorts:\n"
-            "  - name: output_no_lineage\n"
+            "  - name: final_output\n"
             "    version: 1.0.0\n"
             "    contractId: a1234567-b890-cdef-1234-567890abcdef\n"
+            "    inputContracts:\n"
+            "      - id: dbb7b1eb-7628-436e-8914-2a00638ba6db\n"
+            "        version: 1.0.0\n"
         )
 
-        planned = plan_for_product(product_yaml, ODCS_FIXTURES, tmp_path / "models", tmp_path / "sources")
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            downstream_yaml,
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=tmp_path / "products",
+        )
         files = write_files(planned)
+
         sql_files = [f for f in files if f.suffix == ".sql"]
         assert len(sql_files) == 1
         sql = sql_files[0].read_text()
-        # Should fall back to first input port name
-        assert "source('default_input'" in sql
+        # Should use ref() since the input is another product's output
+        assert "ref('payments')" in sql
+        assert "source(" not in sql
+
+    def test_no_source_yml_for_ref_input(self, tmp_path: Path) -> None:
+        """Input ports backed by another product's output don't generate source YAML."""
+        upstream_yaml = tmp_path / "products" / "upstream.odps.yaml"
+        upstream_yaml.parent.mkdir(parents=True, exist_ok=True)
+        upstream_yaml.write_text(
+            "apiVersion: v1.0.0\n"
+            "kind: DataProduct\n"
+            "name: Upstream Product\n"
+            "id: upstream-001\n"
+            "outputPorts:\n"
+            "  - name: upstream_output\n"
+            "    version: 1.0.0\n"
+            "    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db\n"
+        )
+
+        downstream_yaml = tmp_path / "products" / "downstream.odps.yaml"
+        downstream_yaml.write_text(
+            "apiVersion: v1.0.0\n"
+            "kind: DataProduct\n"
+            "name: Downstream Product\n"
+            "id: downstream-001\n"
+            "inputPorts:\n"
+            "  - name: from_upstream\n"
+            "    version: 1.0.0\n"
+            "    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db\n"
+            "outputPorts:\n"
+            "  - name: final_output\n"
+            "    version: 1.0.0\n"
+            "    contractId: a1234567-b890-cdef-1234-567890abcdef\n"
+            "    inputContracts:\n"
+            "      - id: dbb7b1eb-7628-436e-8914-2a00638ba6db\n"
+            "        version: 1.0.0\n"
+        )
+
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            downstream_yaml,
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=tmp_path / "products",
+        )
+        files = write_files(planned)
+
+        names = [f.name for f in files]
+        # No sources.yml since the only input is a ref, not a raw source
+        assert "sources.yml" not in names

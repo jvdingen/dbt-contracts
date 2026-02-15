@@ -33,16 +33,3 @@ def export_sources(contract: OpenDataContractStandard) -> str:
     return _export(contract, ExportFormat.dbt_sources)
 
 
-def export_staging_sql(contract: OpenDataContractStandard) -> str:
-    """Export an ODCS contract to a dbt staging SQL string.
-
-    The generated SQL contains a ``select`` from ``{{ source(...) }}``.
-
-    Raises:
-        RuntimeError: If the contract has no schema (required for SQL generation).
-    """
-    if not contract.schema_:
-        msg = f"Contract '{contract.id}' has no schema — cannot generate staging SQL"
-        raise RuntimeError(msg)
-
-    return _export(contract, ExportFormat.dbt_staging_sql)

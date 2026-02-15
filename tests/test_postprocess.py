@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import yaml
 
-from dbt_contracts.generators.postprocess import merge_models, merge_sources, rename_source, rewrite_source_refs
+from dbt_contracts.generators.postprocess import merge_models, merge_sources, rename_source
 
 SAMPLE_SOURCE = """\
 version: 2
@@ -85,30 +85,3 @@ class TestMergeModels:
         assert len(data["models"]) == 1
 
 
-class TestRewriteSourceRefs:
-    """rewrite_source_refs replaces source names in SQL."""
-
-    def test_single_quote_replacement(self) -> None:
-        """Single-quoted source name is replaced."""
-        sql = "select * from {{ source('old-uuid', 'table') }}"
-        result = rewrite_source_refs(sql, "old-uuid", "payments")
-        assert "source('payments'" in result
-
-    def test_double_quote_replacement(self) -> None:
-        """Double-quoted source name is replaced."""
-        sql = 'select * from {{ source("old-uuid", "table") }}'
-        result = rewrite_source_refs(sql, "old-uuid", "payments")
-        assert "source('payments'" in result
-
-    def test_no_match_unchanged(self) -> None:
-        """SQL without matching source name is unchanged."""
-        sql = "select * from {{ source('other', 'table') }}"
-        result = rewrite_source_refs(sql, "old-uuid", "payments")
-        assert result == sql
-
-    def test_uuid_source_ref(self) -> None:
-        """Real UUID source ref gets rewritten."""
-        sql = "    from {{ source('dbb7b1eb-7628-436e-8914-2a00638ba6db', 'payments') }}"
-        result = rewrite_source_refs(sql, "dbb7b1eb-7628-436e-8914-2a00638ba6db", "my_input")
-        assert "source('my_input'" in result
-        assert "dbb7b1eb" not in result

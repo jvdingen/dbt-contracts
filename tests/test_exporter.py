@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 import yaml
 
-from dbt_contracts.generators.exporter import export_model_schema, export_sources, export_staging_sql
+from dbt_contracts.generators.exporter import export_model_schema, export_sources
 from dbt_contracts.odcs.parser import load_odcs
 
 FIXTURES = Path(__file__).parent / "fixtures" / "odcs"
@@ -87,21 +86,3 @@ class TestExportSources:
         assert len(required_cols) == 4
 
 
-class TestExportStagingSql:
-    """export_staging_sql produces staging SQL or raises on missing schema."""
-
-    def test_with_schema(self) -> None:
-        """Contract with schema produces select from source()."""
-        contract = load_odcs(FIXTURES / "simple_table.odcs.yaml")
-        sql = export_staging_sql(contract)
-
-        assert "source(" in sql
-        assert "payment_id" in sql
-        assert "dbb7b1eb-7628-436e-8914-2a00638ba6db" in sql
-
-    def test_without_schema_raises(self) -> None:
-        """Contract without schema raises RuntimeError."""
-        contract = load_odcs(FIXTURES / "minimal_contract.odcs.yaml")
-
-        with pytest.raises(RuntimeError, match="no schema"):
-            export_staging_sql(contract)

@@ -22,11 +22,15 @@ ODPS product file (.odps.yaml)
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│  Export to dbt   │  datacontract-cli generates sources, models, SQL
+│  Export to dbt   │  datacontract-cli generates sources & model schemas
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│  Post-process    │  Rename sources, merge files, rewrite refs
+│  Generate SQL    │  Build model SQL with source()/ref() from lineage
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  Post-process    │  Rename sources, merge files
 └────────┬────────┘
          ▼
 ┌─────────────────┐
@@ -43,15 +47,16 @@ Each port in an ODPS product references a contract by `contractId` (a UUID). The
 
 ### Export
 
-For each **input port**, the resolved contract is exported to a dbt `sources.yml` entry via `datacontract-cli`. For each **output port**, the contract is exported to a `schema.yml` model definition and (if the contract has a `schema` section) a `stg_<table>.sql` staging SQL file.
+For each **input port**, the resolved contract is exported to a dbt `sources.yml` entry via `datacontract-cli` (unless the input is another product's output, in which case it becomes a `ref()`). For each **output port**, the contract is exported to a `schema.yml` model definition and (if the contract has a `schema` section) a `<table>.sql` model SQL file.
 
 ### Post-processing
 
-The raw exports use contract UUIDs as source names, which aren't human-readable. Post-processing applies three transformations:
+The raw exports use contract UUIDs as source names, which aren't human-readable. Post-processing applies two transformations:
 
 1. **Source renaming** -- replace the contract UUID with the port name (e.g. `a1b2c3d4-...` becomes `payments_source`)
 2. **File merging** -- per-contract exports are merged into a single `sources.yml` and a single `schema.yml`, each with `version: 2` and a combined list
-3. **`source()` ref rewriting** -- staging SQL references like `{{ source('a1b2c3d4-...', 'table') }}` are rewritten using the `inputContracts` list on the output port, which maps upstream contract IDs back to input port names
+
+Model SQL is generated directly by the orchestrator (not exported from datacontract-cli). The `inputContracts` list on each output port determines whether to use `{{ source() }}` (for raw data sources) or `{{ ref() }}` (for other products' outputs).
 
 ### Drift detection
 
@@ -69,8 +74,8 @@ This lets `generate` show you exactly what changed before overwriting anything.
 |-------------|-------------|
 | Input port | `sources.yml` entry (source name = port name) |
 | Output port | `models/schema.yml` entry (model + column definitions) |
-| Output port with schema | `models/staging/stg_<table>.sql` (staging SQL) |
-| `inputContracts` on output port | `{{ source() }}` refs in staging SQL |
+| Output port with schema | `models/<table>.sql` (model SQL) |
+| `inputContracts` on output port | `{{ source() }}` or `{{ ref() }}` in model SQL |
 
 ## Example output
 
@@ -100,7 +105,9 @@ models:
           - not_null
 ```
 
-**`models/staging/stg_payments.sql`**
+**`models/payments.sql`**
 ```sql
-SELECT * FROM {{ source('raw_payments', 'payments') }}
+select
+    id
+from {{ source('raw_payments', 'payments') }}
 ```

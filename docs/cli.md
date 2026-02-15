@@ -43,7 +43,7 @@ The scaffolded project structure:
 │   ├── products/               ← ODPS product files go here
 │   └── schemas/                ← ODCS contract files go here
 ├── models/
-│   ├── staging/                ← generate writes stg_*.sql here
+│   ├── <table>.sql             ← generate writes model SQL here
 │   └── schema.yml              ← generate writes model schema here
 ├── sources/
 │   └── sources.yml             ← generate writes source defs here

@@ -50,7 +50,7 @@ def run_generate(
             console.print(f"[red]Product file not found:[/red] {pf}")
             continue
 
-        planned = plan_for_product(pf, odcs_dir, models_dir, sources_dir)
+        planned = plan_for_product(pf, odcs_dir, models_dir, sources_dir, odps_dir=odps_dir)
         if not planned:
             console.print(f"[yellow]No output for[/yellow] {pf.name}")
             continue

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 import yaml
 
 
@@ -39,11 +37,3 @@ def merge_models(yamls: list[str]) -> str:
     return _merge_yaml_lists(yamls, "models")
 
 
-def rewrite_source_refs(sql: str, old_name: str, new_name: str) -> str:
-    """Replace the source name inside ``{{ source('...', ...) }}`` calls in SQL.
-
-    Handles both single- and double-quoted source names.
-    """
-    pattern = r"\{\{\s*source\(\s*['\"]" + re.escape(old_name) + r"['\"]"
-    replacement = "{{ source('" + new_name + "'"
-    return re.sub(pattern, replacement, sql)
