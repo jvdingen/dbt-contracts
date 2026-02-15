@@ -1,10 +1,10 @@
 # Generation
 
-Converts parsed contracts into dbt artifacts (sources, models, staging SQL).
+Converts parsed contracts into dbt artifacts (sources, models, model SQL).
 
 ## Orchestrator
 
-Coordinates the full generation pipeline: parse products, resolve contracts, export, and post-process.
+Coordinates the full generation pipeline: parse products, resolve contracts, export, generate SQL, merge YAML, and detect drift.
 
 ::: dbt_contracts.generators.orchestrator
 
@@ -13,9 +13,3 @@ Coordinates the full generation pipeline: parse products, resolve contracts, exp
 Calls `datacontract-cli` to export individual contracts into dbt format.
 
 ::: dbt_contracts.generators.exporter
-
-## Post-processing
-
-Merges per-contract exports, renames sources to match port names, and rewires `source()` references using `inputContracts` lineage.
-
-::: dbt_contracts.generators.postprocess

@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+import yaml
+
 from dbt_contracts.generators.exporter import export_model_schema, export_sources
-from dbt_contracts.generators.postprocess import merge_models, merge_sources, rename_source
 from dbt_contracts.odcs.parser import load_odcs_by_id
 from dbt_contracts.odps.parser import load_odps
 from dbt_contracts.odps.schema import InputPort, OutputPort
@@ -39,6 +40,34 @@ def _compute_drift(path: Path, content: str) -> DriftStatus:
     if path.read_text() == content:
         return DriftStatus.UNCHANGED
     return DriftStatus.CHANGED
+
+
+def _rename_source(source_yaml: str, old_name: str, new_name: str) -> str:
+    """Replace a source name in a dbt sources.yml YAML string."""
+    data = yaml.safe_load(source_yaml)
+    for source in data.get("sources", []):
+        if source.get("name") == old_name:
+            source["name"] = new_name
+    return yaml.safe_dump(data, sort_keys=False)
+
+
+def _merge_yaml_lists(yamls: list[str], key: str) -> str:
+    """Merge multiple dbt YAML strings by concatenating a top-level list key."""
+    items: list[dict] = []
+    for y in yamls:
+        data = yaml.safe_load(y)
+        items.extend(data.get(key, []))
+    return yaml.safe_dump({"version": 2, key: items}, sort_keys=False)
+
+
+def _merge_sources(yamls: list[str]) -> str:
+    """Merge multiple dbt sources.yml YAML strings into one document."""
+    return _merge_yaml_lists(yamls, "sources")
+
+
+def _merge_models(yamls: list[str]) -> str:
+    """Merge multiple dbt schema.yml YAML strings into one document."""
+    return _merge_yaml_lists(yamls, "models")
 
 
 def _build_ref_set(odps_dir: Path) -> set[str]:
@@ -135,7 +164,7 @@ def _process_input_ports(
         # Only emit source YAML for raw sources (not other products' outputs)
         if contract.id not in ref_contracts:
             raw_yaml = export_sources(contract)
-            renamed = rename_source(raw_yaml, contract.id, port.name)
+            renamed = _rename_source(raw_yaml, contract.id, port.name)
             source_yamls.append(renamed)
 
     return source_yamls, contract_to_first_table
@@ -232,12 +261,12 @@ def plan_for_product(
     files: list[GeneratedFile] = []
 
     if source_yamls:
-        merged = merge_sources(source_yamls)
+        merged = _merge_sources(source_yamls)
         sources_path = sources_dir / "sources.yml"
         files.append(GeneratedFile(sources_path, merged, _compute_drift(sources_path, merged)))
 
     if model_yamls:
-        merged = merge_models(model_yamls)
+        merged = _merge_models(model_yamls)
         schema_path = models_dir / "schema.yml"
         files.append(GeneratedFile(schema_path, merged, _compute_drift(schema_path, merged)))
 
