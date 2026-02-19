@@ -429,3 +429,46 @@ class TestMetadataProduct:
         col_meta = revenue_col.get("meta", {})
         assert col_meta.get("critical_data_element") is True
         assert col_meta.get("business_name") == "Annual Revenue"
+
+
+class TestSourcesProduct:
+    """sources_product uses contracts with servers and SLA properties."""
+
+    def test_sources_yml_has_database_and_schema(self, tmp_path: Path) -> None:
+        """Sources YAML includes database and schema from ODCS server config."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            ODPS_FIXTURES / "sources_product.odps.yaml",
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=ODPS_FIXTURES,
+        )
+        write_files(planned)
+
+        sources = yaml.safe_load((sources_dir / "sources.yml").read_text())
+        # payments_source uses with_servers contract — prod server has raw_db/public
+        payments = next(s for s in sources["sources"] if s["name"] == "payments_source")
+        assert payments["database"] == "raw_db"
+        assert payments["schema"] == "public"
+
+    def test_sources_yml_has_freshness(self, tmp_path: Path) -> None:
+        """Sources YAML includes freshness from ODCS SLA properties."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            ODPS_FIXTURES / "sources_product.odps.yaml",
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=ODPS_FIXTURES,
+        )
+        write_files(planned)
+
+        sources = yaml.safe_load((sources_dir / "sources.yml").read_text())
+        # orders_source uses with_sla contract
+        orders = next(s for s in sources["sources"] if s["name"] == "orders_source")
+        assert orders["freshness"]["warn_after"] == {"count": 24, "period": "hour"}
+        assert orders["freshness"]["error_after"] == {"count": 48, "period": "hour"}
+        assert orders["loaded_at_field"] == "_loaded_at"

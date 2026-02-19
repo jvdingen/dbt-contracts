@@ -12,6 +12,7 @@ import yaml
 from dbt_contracts.generators.exporter import export_model_schema, export_sources
 from dbt_contracts.generators.metadata import inject_metadata
 from dbt_contracts.generators.quality import inject_quality_tests
+from dbt_contracts.generators.sources import inject_source_config, inject_source_freshness
 from dbt_contracts.odcs.parser import load_odcs_by_id
 from dbt_contracts.odps.parser import load_odps
 from dbt_contracts.odps.schema import InputPort, OutputPort
@@ -167,6 +168,8 @@ def _process_input_ports(
         if contract.id not in ref_contracts:
             raw_yaml = export_sources(contract)
             renamed = _rename_source(raw_yaml, contract.id, port.name)
+            renamed = inject_source_config(renamed, contract)
+            renamed = inject_source_freshness(renamed, contract)
             source_yamls.append(renamed)
 
     return source_yamls, contract_to_first_table

@@ -1,0 +1,22 @@
+apiVersion: v1.0.0
+kind: DataProduct
+name: Sources Test Product
+id: src-test-0001-0002-0003-000000000001
+domain: testing
+status: draft
+inputPorts:
+  - name: payments_source
+    version: 1.0.0
+    contractId: srv-contract-0001-0002-0003-000000000001
+  - name: orders_source
+    version: 1.0.0
+    contractId: sla-contract-0001-0002-0003-000000000001
+outputPorts:
+  - name: customer_summary
+    description: Aggregated customer data
+    type: tables
+    version: 1.0.0
+    contractId: c2798941-1b7e-4b03-9e0d-955b1a872b32
+    inputContracts:
+      - id: srv-contract-0001-0002-0003-000000000001
+        version: 1.0.0

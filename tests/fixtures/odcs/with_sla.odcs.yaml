@@ -1,0 +1,31 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: sla-contract-0001-0002-0003-000000000001
+name: SLA Config Contract
+version: 1.0.0
+status: active
+slaDefaultElement: _loaded_at
+slaProperties:
+  - property: frequency
+    value: 24
+    unit: hours
+    description: Data refreshed every 24 hours
+  - property: latency
+    value: 48
+    unit: hours
+    description: Maximum acceptable staleness
+schema:
+  - name: orders
+    physicalName: raw_orders
+    physicalType: table
+    properties:
+      - name: order_id
+        logicalType: string
+        primaryKey: true
+        required: true
+      - name: order_date
+        logicalType: timestamp
+        required: true
+      - name: _loaded_at
+        logicalType: timestamp
+        required: true

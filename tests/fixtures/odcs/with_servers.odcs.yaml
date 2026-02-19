@@ -1,0 +1,31 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: srv-contract-0001-0002-0003-000000000001
+name: Server Config Contract
+version: 1.0.0
+status: active
+servers:
+  - environment: dev
+    type: postgres
+    host: dev-db.example.com
+    port: 5432
+    database: dev_db
+    schema: staging
+  - environment: prod
+    type: postgres
+    host: prod-db.example.com
+    port: 5432
+    database: raw_db
+    schema: public
+schema:
+  - name: payments
+    physicalName: raw_payments
+    physicalType: table
+    properties:
+      - name: payment_id
+        logicalType: string
+        primaryKey: true
+        required: true
+      - name: amount
+        logicalType: number
+        required: true
