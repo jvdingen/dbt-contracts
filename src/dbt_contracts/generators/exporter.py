@@ -4,12 +4,28 @@ from __future__ import annotations
 
 from datacontract.data_contract import DataContract
 from datacontract.export.exporter import ExportFormat
-from open_data_contract_standard.model import OpenDataContractStandard
+from open_data_contract_standard.model import OpenDataContractStandard, Team, TeamMember
+
+
+def _normalize_team(contract: OpenDataContractStandard) -> OpenDataContractStandard:
+    """Return a shallow copy with ``team`` normalised to a ``Team`` object.
+
+    ODCS allows ``team`` to be either a ``Team`` object or a bare
+    ``list[TeamMember]``.  datacontract-cli only handles the ``Team``
+    form, so we wrap the list when necessary.
+    """
+    if not isinstance(contract.team, list):
+        return contract
+    members: list[TeamMember] = contract.team
+    owner = next((m for m in members if m.role == "owner"), None)
+    team_name = owner.name if owner and owner.name else "team"
+    return contract.model_copy(update={"team": Team(name=team_name, members=members)})
 
 
 def _export(contract: OpenDataContractStandard, fmt: ExportFormat) -> str:
     """Export a contract to the given format and return a UTF-8 string."""
-    dc = DataContract(data_contract=contract)
+    safe = _normalize_team(contract)
+    dc = DataContract(data_contract=safe)
     result = dc.export(fmt)
     if isinstance(result, bytes):
         return result.decode("utf-8")
