@@ -4,7 +4,7 @@ Project instructions for Agents working on `dbt-contracts`.
 
 ## Project Overview
 
-Contract-driven dbt workflow tool that uses Bitol ODPS (Open Data Product Standard) v1.0.0 and Bitol ODCS (Open Data Contract Standard) v3.1.0 to generate dbt models, sources, and tests. See `docs/implementation-plan.md` for the full architecture and open issues.
+Contract-driven dbt workflow tool that uses Bitol ODPS (Open Data Product Standard) v1.0.0 and Bitol ODCS (Open Data Contract Standard) v3.1.0 to generate dbt models, sources, and tests. See `docs/architecture.md` for the full architecture.
 
 ## Environment Setup
 
