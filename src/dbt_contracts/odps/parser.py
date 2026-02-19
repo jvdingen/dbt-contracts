@@ -11,5 +11,5 @@ from .schema import DataProduct
 
 def load_odps(file_path: Path) -> DataProduct:
     """Load and parse an ODPS YAML file into a DataProduct."""
-    raw = yaml.safe_load(file_path.read_text())
+    raw = yaml.safe_load(file_path.read_text(encoding="utf-8"))
     return DataProduct.model_validate(raw)

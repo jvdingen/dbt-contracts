@@ -75,12 +75,12 @@ def _sanitize_project_name(name: str) -> str:
 def _read_model_paths(dbt_project_path: Path) -> str:
     """Read the first model-paths entry from dbt_project.yml, defaulting to 'models'."""
     try:
-        data = yaml.safe_load(dbt_project_path.read_text())
+        data = yaml.safe_load(dbt_project_path.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             model_paths = data.get("model-paths", ["models"])
             if isinstance(model_paths, list) and model_paths:
                 return str(model_paths[0])
-    except Exception:  # noqa: BLE001
+    except (OSError, yaml.YAMLError):
         pass
     return "models"
 
@@ -144,7 +144,8 @@ def _init_existing_project(project_root: Path, dbt_project_path: Path, console: 
         console.print(f"[dim]Config already exists:[/dim] {config_path}")
     else:
         config_path.write_text(
-            _EXISTING_PROJECT_CONFIG.format(models_dir=models_dir, sources_dir=sources_dir)
+            _EXISTING_PROJECT_CONFIG.format(models_dir=models_dir, sources_dir=sources_dir),
+            encoding="utf-8",
         )
         console.print(f"[green]Created[/green] {config_path}")
 
@@ -173,7 +174,7 @@ def _init_new_project(project_root: Path, console: Console, adapter: str | None 
     if config_path.exists():
         console.print(f"[dim]Config already exists:[/dim] {config_path}")
     else:
-        config_path.write_text(_DEFAULT_CONFIG)
+        config_path.write_text(_DEFAULT_CONFIG, encoding="utf-8")
         console.print(f"[green]Created[/green] {config_path}")
 
     # --- dbt_project.yml ---
@@ -181,7 +182,7 @@ def _init_new_project(project_root: Path, console: Console, adapter: str | None 
     if dbt_project_path.exists():
         console.print(f"[dim]Already exists:[/dim] {dbt_project_path}")
     else:
-        dbt_project_path.write_text(_DBT_PROJECT_TEMPLATE.format(project_name=project_name))
+        dbt_project_path.write_text(_DBT_PROJECT_TEMPLATE.format(project_name=project_name), encoding="utf-8")
         console.print(f"[green]Created[/green] {dbt_project_path}")
 
     # --- profiles.yml ---
@@ -190,7 +191,7 @@ def _init_new_project(project_root: Path, console: Console, adapter: str | None 
         console.print(f"[dim]Already exists:[/dim] {profiles_path}")
     else:
         profile_content = ADAPTERS[adapter].profile.format(project_name=project_name)
-        profiles_path.write_text(profile_content)
+        profiles_path.write_text(profile_content, encoding="utf-8")
         console.print(f"[green]Created[/green] {profiles_path}")
 
     # --- Directories ---

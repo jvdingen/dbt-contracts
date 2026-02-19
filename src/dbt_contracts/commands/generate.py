@@ -94,7 +94,7 @@ def run_generate(
 
 def _show_drift_summary(gen_file: GeneratedFile, console: Console) -> None:
     """Show a unified diff for a changed file."""
-    existing = gen_file.path.read_text().splitlines(keepends=True)
+    existing = gen_file.path.read_text(encoding="utf-8").splitlines(keepends=True)
     proposed = gen_file.content.splitlines(keepends=True)
     diff = difflib.unified_diff(
         existing,

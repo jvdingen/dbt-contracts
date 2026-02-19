@@ -106,7 +106,10 @@ def inject_metadata(
             None,
         )
         if schema_obj is None:
+            logger.debug("Skipping model '%s': no matching schema object in contract '%s'", model_name, contract.id or "<unknown>")
             continue
+
+        logger.debug("Injecting metadata into model '%s' (contract '%s')", model_name, contract.id or "<unknown>")
 
         # --- Tags ---
         if unique_tags:

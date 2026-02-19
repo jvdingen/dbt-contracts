@@ -69,13 +69,13 @@ def inject_source_config(source_yaml: str, contract: OpenDataContractStandard) -
 
 def _build_freshness(
     sla_properties: list[ServiceLevelAgreementProperty],
-) -> dict | None:
+) -> dict[str, dict[str, int | str]] | None:
     """Build a dbt ``freshness`` dict from ODCS SLA properties.
 
     Looks for ``property == "frequency"`` (→ ``warn_after``) and
     ``property == "latency"`` (→ ``error_after``).
     """
-    freshness: dict = {}
+    freshness: dict[str, dict[str, int | str]] = {}
 
     for sla in sla_properties:
         prop_name = (sla.property or "").lower()

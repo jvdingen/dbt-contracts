@@ -40,7 +40,7 @@ class GeneratedFile:
 def _compute_drift(path: Path, content: str) -> DriftStatus:
     if not path.exists():
         return DriftStatus.NEW
-    if path.read_text() == content:
+    if path.read_text(encoding="utf-8") == content:
         return DriftStatus.UNCHANGED
     return DriftStatus.CHANGED
 
@@ -83,7 +83,7 @@ def _build_ref_set(odps_dir: Path) -> set[str]:
     for product_path in odps_dir.glob("**/*.odps.yaml"):
         try:
             product = load_odps(product_path)
-        except Exception:  # noqa: BLE001
+        except (OSError, yaml.YAMLError):
             logger.warning("Skipping unreadable product file: %s", product_path)
             continue
         for port in product.outputPorts or []:
@@ -117,7 +117,7 @@ def _generate_model_sql(
         port_name = contract_to_port.get(first_ic.id, first_ic.id)
         from_clause = "{{ " + f"source('{port_name}', '{table_name}')" + " }}"
     else:
-        from_clause = "{ /* TODO: unknown input contract */ }"
+        from_clause = "/* TODO: unknown input contract */"
 
     col_list = ",\n    ".join(columns)
     sql = f"select\n    {col_list}\nfrom {from_clause}\n"
@@ -175,6 +175,18 @@ def _process_input_ports(
     return source_yamls, contract_to_first_table
 
 
+def _extract_columns(schema_obj: object) -> list[str] | None:
+    """Extract column names from a schema object's properties.
+
+    Returns a list of column names, or ``None`` if no columns are found.
+    """
+    properties = getattr(schema_obj, "properties", None)
+    if not properties:
+        return None
+    columns = [col_name for prop in properties if (col_name := getattr(prop, "name", None))]
+    return columns if columns else None
+
+
 def _process_output_ports(
     output_ports: list[OutputPort],
     odcs_dir: Path,
@@ -213,16 +225,8 @@ def _process_output_ports(
                 logger.warning("Skipping unnamed schema object in contract '%s'", contract.id or "<unknown>")
                 continue
 
-            # Collect column names from properties
-            columns: list[str] = []
-            properties = getattr(schema_obj, "properties", None)
-            if properties:
-                for prop in properties:
-                    col_name = getattr(prop, "name", None)
-                    if col_name:
-                        columns.append(col_name)
-
-            if not columns:
+            columns = _extract_columns(schema_obj)
+            if columns is None:
                 logger.warning("Skipping table '%s': no columns found", name)
                 continue
 
@@ -301,6 +305,6 @@ def write_files(files: list[GeneratedFile]) -> list[Path]:
     written: list[Path] = []
     for f in files:
         f.path.parent.mkdir(parents=True, exist_ok=True)
-        f.path.write_text(f.content)
+        f.path.write_text(f.content, encoding="utf-8")
         written.append(f.path)
     return written

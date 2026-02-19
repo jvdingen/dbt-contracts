@@ -45,7 +45,7 @@ def run_config_set(key: str, value: str, project_root: Path, console: Console) -
 
     toml_path = project_root / "contracts" / "dbt-contracts.toml"
     if toml_path.is_file():
-        data = tomllib.loads(toml_path.read_text())
+        data = tomllib.loads(toml_path.read_text(encoding="utf-8"))
     else:
         data = {}
 
@@ -65,15 +65,14 @@ def run_config_set(key: str, value: str, project_root: Path, console: Console) -
     return True
 
 
-def run_config_export(config: Config, path: Path, console: Console) -> bool:
+def run_config_export(config: Config, path: Path, console: Console) -> None:
     """Export the resolved configuration to a TOML file.
 
-    Returns ``True`` on success.
+    Raises ``OSError`` if the file cannot be written.
     """
     data = config.model_dump()
     path.write_bytes(tomli_w.dumps(data).encode())
     console.print(f"[green]Exported[/green] configuration to {path}")
-    return True
 
 
 def run_config_import(path: Path, project_root: Path, console: Console) -> bool:
@@ -81,7 +80,7 @@ def run_config_import(path: Path, project_root: Path, console: Console) -> bool:
 
     Validates the file before writing. Returns ``True`` on success.
     """
-    data = tomllib.loads(path.read_text())
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
 
     Config(**data)
 

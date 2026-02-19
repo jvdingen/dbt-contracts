@@ -104,14 +104,16 @@ def _config_import_flow(project_root: Path, console: Console) -> Config:
 def _ask_setting_value(setting_key: str, setting_type: str, choices: tuple[str, ...] | None, current: str | bool) -> str | None:
     """Prompt for a new setting value. Returns the string representation, or None if cancelled."""
     if setting_type == "bool":
-        assert isinstance(current, bool)
+        if not isinstance(current, bool):
+            raise TypeError(f"Expected bool for setting '{setting_key}', got {type(current).__name__}")
         result = questionary.confirm(f"{setting_key}", default=current).ask()
         if result is None:
             return None
         return "true" if result else "false"
 
     if choices:
-        assert isinstance(current, str)
+        if not isinstance(current, str):
+            raise TypeError(f"Expected str for setting '{setting_key}', got {type(current).__name__}")
         return questionary.select(f"{setting_key}", choices=list(choices), default=current).ask()
 
     return questionary.text(f"{setting_key}", default=str(current)).ask()
@@ -148,7 +150,8 @@ def _get_current_value(config: Config, dotted_key: str) -> str | bool:
     obj: object = config
     for part in parts:
         obj = getattr(obj, part)
-    assert isinstance(obj, (str, bool))
+    if not isinstance(obj, (str, bool)):
+        raise TypeError(f"Config key '{dotted_key}' resolved to unexpected type {type(obj).__name__}")
     return obj
 
 

@@ -87,7 +87,7 @@ def find_config_path(config_path: Path | None = None, project_root: Path | None 
 
     pyproject = project_root / "pyproject.toml"
     if pyproject.is_file():
-        data = tomllib.loads(pyproject.read_text())
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
         if data.get("tool", {}).get("dbt-contracts") is not None:
             return pyproject
 
@@ -110,7 +110,7 @@ def load_config(config_path: Path | None = None, project_root: Path | None = Non
     if resolved is None:
         return Config()
 
-    data = tomllib.loads(resolved.read_text())
+    data = tomllib.loads(resolved.read_text(encoding="utf-8"))
 
     # pyproject.toml stores config under [tool.dbt-contracts]
     if resolved.name == "pyproject.toml":

@@ -42,7 +42,13 @@ def _custom_dbt_rule_to_test(rule: DataQuality) -> dict[str, Any] | str | None:
 
 
 def _row_count_to_test(rule: DataQuality) -> dict[str, Any]:
-    """Convert a ``metric: rowCount`` rule to ``dbt_expectations.expect_table_row_count_to_be_between``."""
+    """Convert a ``metric: rowCount`` rule to ``dbt_expectations.expect_table_row_count_to_be_between``.
+
+    When multiple threshold keys are present for the same bound (e.g. both
+    ``mustBeGreaterThan`` and ``mustBeGreaterOrEqualTo``), the last one evaluated
+    wins: ``mustBeGreaterOrEqualTo`` overrides ``mustBeGreaterThan``, and
+    ``mustBeBetween`` overrides both upper and lower bounds.
+    """
     params: dict[str, Any] = {}
     if rule.mustBeGreaterThan is not None:
         params["min_value"] = rule.mustBeGreaterThan + 1
