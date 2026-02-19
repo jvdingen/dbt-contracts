@@ -45,7 +45,7 @@ gifs:
     done
 
 run:
-    uv run python -m src.main
+    uv run dbt-contracts
 
 # Remove temporary files
 [group('lifecycle')]

@@ -48,4 +48,3 @@ def export_sources(contract: OpenDataContractStandard) -> str:
     """
     return _export(contract, ExportFormat.dbt_sources)
 
-
