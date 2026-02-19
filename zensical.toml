@@ -3,11 +3,11 @@ site_name = "dbt-contracts"
 site_description = "dbt project generator based on Bitol ODCS/ODPS standards"
 site_author = "Joeri Van Dingenen"
 copyright = "Copyright &copy; 2026 JVD"
-repo_url = "https://github.com/jvdingen/dbt-with-datacontracts"
+repo_url = "https://github.com/jvdingen/dbt-contracts"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
-link = "https://github.com/jvdingen/dbt-with-datacontracts"
+link = "https://github.com/jvdingen/dbt-contracts"
 
 [project.theme]
 language = "en"
