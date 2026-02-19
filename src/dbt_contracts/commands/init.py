@@ -75,8 +75,7 @@ def _sanitize_project_name(name: str) -> str:
 def _read_model_paths(dbt_project_path: Path) -> str:
     """Read the first model-paths entry from dbt_project.yml, defaulting to 'models'."""
     try:
-        with open(dbt_project_path) as f:
-            data = yaml.safe_load(f)
+        data = yaml.safe_load(dbt_project_path.read_text())
         if isinstance(data, dict):
             model_paths = data.get("model-paths", ["models"])
             if isinstance(model_paths, list) and model_paths:
@@ -84,6 +83,17 @@ def _read_model_paths(dbt_project_path: Path) -> str:
     except Exception:  # noqa: BLE001
         pass
     return "models"
+
+
+def _print_next_steps(console: Console, adapter: str | None = None) -> None:
+    """Print post-init instructions."""
+    console.print()
+    console.print("[bold]Next steps:[/bold]")
+    console.print("  1. Place ODPS product files in contracts/products/")
+    console.print("  2. Place ODCS contract files in contracts/schemas/")
+    console.print("  3. Run [bold]dbt-contracts generate[/bold] to create dbt artifacts")
+    if adapter:
+        console.print(f"  4. Install dbt and the {adapter} adapter, then run [bold]dbt build[/bold]")
 
 
 def run_init(project_root: Path, console: Console, adapter: str | None = None) -> None:
@@ -138,11 +148,7 @@ def _init_existing_project(project_root: Path, dbt_project_path: Path, console: 
         )
         console.print(f"[green]Created[/green] {config_path}")
 
-    console.print()
-    console.print("[bold]Next steps:[/bold]")
-    console.print("  1. Place ODPS product files in contracts/products/")
-    console.print("  2. Place ODCS contract files in contracts/schemas/")
-    console.print("  3. Run [bold]dbt-contracts generate[/bold] to create dbt artifacts")
+    _print_next_steps(console)
 
 
 def _init_new_project(project_root: Path, console: Console, adapter: str | None = None) -> None:
@@ -205,9 +211,4 @@ def _init_new_project(project_root: Path, console: Console, adapter: str | None 
         dirpath.mkdir(parents=True, exist_ok=True)
         console.print(f"[green]Ensured directory[/green] {dirpath}")
 
-    console.print()
-    console.print("[bold]Next steps:[/bold]")
-    console.print("  1. Place ODPS product files in contracts/products/")
-    console.print("  2. Place ODCS contract files in contracts/schemas/")
-    console.print("  3. Run [bold]dbt-contracts generate[/bold] to create dbt artifacts")
-    console.print(f"  4. Install dbt and the {adapter} adapter, then run [bold]dbt build[/bold]")
+    _print_next_steps(console, adapter=adapter)

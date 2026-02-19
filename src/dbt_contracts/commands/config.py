@@ -45,8 +45,7 @@ def run_config_set(key: str, value: str, project_root: Path, console: Console) -
 
     toml_path = project_root / "contracts" / "dbt-contracts.toml"
     if toml_path.is_file():
-        with open(toml_path, "rb") as f:
-            data = tomllib.load(f)
+        data = tomllib.loads(toml_path.read_text())
     else:
         data = {}
 
@@ -82,8 +81,7 @@ def run_config_import(path: Path, project_root: Path, console: Console) -> bool:
 
     Validates the file before writing. Returns ``True`` on success.
     """
-    with open(path, "rb") as f:
-        data = tomllib.load(f)
+    data = tomllib.loads(path.read_text())
 
     Config(**data)
 
