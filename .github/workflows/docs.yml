@@ -19,16 +19,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - name: Cache terminal recording GIFs
+        id: gif-cache
+        uses: actions/cache@v4
+        with:
+          path: docs/assets/gifs
+          key: vhs-gifs-${{ hashFiles('docs/tapes/*.tape') }}
       - name: Install VHS and dependencies
+        if: steps.gif-cache.outputs.cache-hit != 'true'
         run: |
           sudo mkdir -p /etc/apt/keyrings
           curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
           echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
           sudo apt-get update && sudo apt-get install -y vhs ffmpeg ttyd
+      - name: Install dbt-contracts
+        if: steps.gif-cache.outputs.cache-hit != 'true'
+        run: pip install -e .
       - name: Generate terminal recording GIFs
+        if: steps.gif-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p docs/assets/gifs
-          pip install -e .
           for tape in docs/tapes/*.tape; do
             [ -f "$tape" ] || continue
             name="$(basename "$tape" .tape)"
