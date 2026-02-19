@@ -91,7 +91,7 @@ Full documentation is available in the [`docs/`](docs/) directory:
 
 ```sh
 git clone <repo-url>
-cd dbt-with-contracts
+cd dbt-contracts
 just install
 ```
 
