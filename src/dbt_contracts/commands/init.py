@@ -54,6 +54,11 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
+models:
+  +persist_docs:
+    relation: true
+    columns: true
+
 clean-targets:
   - "target"
   - "dbt_packages"
