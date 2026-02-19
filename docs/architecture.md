@@ -54,9 +54,11 @@ For each **input port**, the resolved contract is exported to a dbt `sources.yml
 The raw exports use contract UUIDs as source names, which aren't human-readable. Post-processing applies several transformations:
 
 1. **Source renaming** -- replace the contract UUID with the port name (e.g. `a1b2c3d4-...` becomes `payments_source`)
-2. **Quality injection** (`generators/quality.py`) -- convert ODCS `quality[]` rules to dbt test entries (`dbt_utils`, `dbt_expectations`, custom) and inject them into `schema.yml` at table and column level
-3. **Metadata injection** (`generators/metadata.py`) -- propagate contract/product metadata into `schema.yml`: tags, rich descriptions, `config.meta` (owner, domain), and column-level meta (`critical_data_element`, `business_name`)
-4. **File merging** -- per-contract exports are merged into a single `sources.yml` and a single `schema.yml`, each with `version: 2` and a combined list
+2. **Source config injection** (`generators/sources.py`) -- inject `database` and `schema` into `sources.yml` from the ODCS `servers[]` entry (preferring `environment: prod`); handles BigQuery (`project`/`dataset`) vs other warehouses (`database`/`schema`)
+3. **Freshness injection** (`generators/sources.py`) -- inject `freshness` and `loaded_at_field` into `sources.yml` from ODCS `slaProperties[]`: `property: frequency` → `warn_after`, `property: latency` → `error_after`
+4. **Quality injection** (`generators/quality.py`) -- convert ODCS `quality[]` rules to dbt test entries (`dbt_utils`, `dbt_expectations`, custom) and inject them into `schema.yml` at table and column level
+5. **Metadata injection** (`generators/metadata.py`) -- propagate contract/product metadata into `schema.yml`: tags, rich descriptions, `config.meta` (owner, domain), and column-level meta (`critical_data_element`, `business_name`)
+6. **File merging** -- per-contract exports are merged into a single `sources.yml` and a single `schema.yml`, each with `version: 2` and a combined list
 
 Model SQL is generated directly by the orchestrator (not exported from datacontract-cli). The `inputContracts` list on each output port determines whether to use `{{ source() }}` (for raw data sources) or `{{ ref() }}` (for other products' outputs).
 
@@ -85,6 +87,11 @@ This lets `generate` show you exactly what changed before overwriting anything.
 | Contract `quality[]` rules | Model/column `data_tests` entries |
 | Property `criticalDataElement` | Column `meta.critical_data_element` |
 | Property `businessName` | Column `meta.business_name` |
+| Contract `servers[].database` / `servers[].project` | Source `database` |
+| Contract `servers[].schema` / `servers[].dataset` | Source `schema` |
+| Contract `slaProperties[]` (`frequency`) | Source `freshness.warn_after` |
+| Contract `slaProperties[]` (`latency`) | Source `freshness.error_after` |
+| Contract `slaDefaultElement` | Source `loaded_at_field` (default: `_loaded_at`) |
 
 ## Example output
 

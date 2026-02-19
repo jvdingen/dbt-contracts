@@ -128,6 +128,57 @@ schema:
 | `criticalDataElement` | Propagated to `column.meta.critical_data_element` |
 | `businessName` | Propagated to `column.meta.business_name` |
 
+### Server configuration
+
+The `servers[]` array is used to inject `database` and `schema` into the generated `sources.yml`. The server with `environment: prod` is preferred; if absent, the first server entry is used.
+
+```yaml
+servers:
+  - environment: prod
+    type: postgres
+    database: analytics
+    schema: raw
+```
+
+BigQuery uses `project` and `dataset` instead of `database` and `schema`:
+
+```yaml
+servers:
+  - environment: prod
+    type: bigquery
+    project: my-gcp-project
+    dataset: raw_data
+```
+
+| Server field | dbt target |
+|-------------|-----------|
+| `database` / `project` | Source `database` |
+| `schema` / `dataset` | Source `schema` |
+
+### SLA properties
+
+The `slaProperties[]` array controls dbt source freshness. The `slaDefaultElement` field sets the timestamp column used to measure freshness.
+
+```yaml
+slaDefaultElement: loaded_at
+
+slaProperties:
+  - property: frequency
+    value: 24
+    unit: hours
+  - property: latency
+    value: 48
+    unit: hours
+```
+
+| SLA property | dbt target |
+|-------------|-----------|
+| `property: frequency` | `freshness.warn_after` |
+| `property: latency` | `freshness.error_after` |
+| `slaDefaultElement` | `loaded_at_field` (default: `_loaded_at`) |
+
+Time unit values are normalised: both `hours` and `hour` are accepted.
+
 ### Contract-level metadata
 
 These ODCS fields are propagated to the generated dbt `schema.yml`:

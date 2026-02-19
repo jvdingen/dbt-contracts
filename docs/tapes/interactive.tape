@@ -45,11 +45,7 @@ Type "build"
 Enter
 Sleep 2s
 
-# Go back with Ctrl+C
-Ctrl+C
-Sleep 1s
-
-# Navigate to Exit
+# Navigate to Exit from the main menu
 Down 4
 Sleep 300ms
 Enter

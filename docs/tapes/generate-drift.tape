@@ -44,8 +44,7 @@ Type "dbt-contracts generate"
 Enter
 Sleep 3s
 
-# Answer the per-file prompt
-Type "y"
+# Answer the per-file prompt ("Yes" is pre-selected — press Enter to confirm)
 Enter
 Sleep 2s
 

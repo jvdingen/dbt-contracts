@@ -48,7 +48,7 @@ Enter
 Sleep 2s
 
 # Show a generated model
-Type "cat models/staging/stg_customer_summary.sql"
+Type "cat models/customer_summary.sql"
 Enter
 Sleep 3s
 

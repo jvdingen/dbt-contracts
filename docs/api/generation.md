@@ -25,3 +25,9 @@ Converts ODCS quality rules to dbt test entries and injects them into schema YAM
 Propagates contract/product metadata (tags, descriptions, owner, domain, column meta) into schema YAML.
 
 ::: dbt_contracts.generators.metadata
+
+## Sources
+
+Maps ODCS server properties (database, schema) and SLA properties (frequency → `warn_after`, latency → `error_after`) into dbt source configuration.
+
+::: dbt_contracts.generators.sources
