@@ -65,12 +65,6 @@ Pre-commit runs automatically on `git commit`. The hooks are:
 - After changing deps: commit `pyproject.toml` and `uv.lock`, then run `just check` and `just test`
 - The `pylock.toml` is auto-exported by `just install` and `just update`
 
-## Observability
-
-- Logging uses Pydantic Logfire (`logfire`)
-- Configure via `.env` file (copy `.env.example`), set `LOGFIRE_TOKEN`
-- If no token, logs go to console only (`send_to_logfire='if-token-present'`)
-
 ## Project Structure
 
 ```

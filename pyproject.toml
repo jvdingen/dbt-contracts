@@ -5,7 +5,6 @@ description = "Contract-driven dbt workflow using ODPS and ODCS"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "logfire>=4.16.0",
     "pyyaml>=6.0",
     "pydantic>=2.0",
     "click>=8.0",

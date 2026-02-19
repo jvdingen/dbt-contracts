@@ -28,7 +28,6 @@ repos:
       # Run the type checker.
       - id: ty-check
         additional_dependencies:
-          - logfire>=4.16.0
           - pyyaml>=6.0
           - pydantic>=2.0
           - click>=8.0

@@ -6,15 +6,10 @@ import sys
 from pathlib import Path
 
 import click
-import logfire
 from pydantic import ValidationError
 from rich.console import Console
 
 from dbt_contracts.config import load_config
-
-# 'if-token-present' means nothing will be sent (and the example still works)
-# when a Logfire token/environment isn't configured.
-logfire.configure(send_to_logfire="if-token-present")
 
 
 @click.group(invoke_without_command=True)
@@ -160,5 +155,4 @@ def validate(ctx: click.Context, contract: str | None, live: bool) -> None:
 
 def main() -> None:
     """Entry point for the dbt-contracts CLI."""
-    logfire.info("application.startup")
     cli()
