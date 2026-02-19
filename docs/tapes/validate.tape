@@ -7,6 +7,19 @@ Set TypingSpeed 50ms
 
 Output docs/assets/gifs/validate.gif
 
+# Set up a temporary project with a valid contract
+Hide
+Type "cd $(mktemp -d) && export REPO_ROOT=${REPO_ROOT:-$(pwd)}"
+Enter
+Sleep 300ms
+Type "dbt-contracts init --adapter duckdb"
+Enter
+Sleep 2s
+Type "cp $REPO_ROOT/tests/fixtures/odcs/customer_summary.odcs.yaml contracts/schemas/"
+Enter
+Sleep 300ms
+Show
+
 # Validate contracts — should pass
 Type "dbt-contracts validate"
 Enter

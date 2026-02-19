@@ -7,6 +7,16 @@ Set TypingSpeed 50ms
 
 Output docs/assets/gifs/interactive.gif
 
+# Set up a temporary project
+Hide
+Type "cd $(mktemp -d)"
+Enter
+Sleep 300ms
+Type "dbt-contracts init --adapter duckdb"
+Enter
+Sleep 2s
+Show
+
 # Launch interactive mode
 Type "dbt-contracts"
 Enter

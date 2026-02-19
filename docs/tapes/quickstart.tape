@@ -7,10 +7,12 @@ Set TypingSpeed 50ms
 
 Output docs/assets/gifs/quickstart.gif
 
-# Create a temporary project directory
-Type "mkdir /tmp/my-dbt-project && cd /tmp/my-dbt-project"
+# Set up a temporary project directory
+Hide
+Type "cd $(mktemp -d) && export REPO_ROOT=${REPO_ROOT:-$(pwd)}"
 Enter
 Sleep 500ms
+Show
 
 # Initialize the project
 Type "dbt-contracts init --adapter duckdb"
@@ -22,13 +24,18 @@ Type "tree -L 2"
 Enter
 Sleep 2s
 
-# Copy in sample contract files
-Type "cp -r ~/contracts/products/* contracts/products/"
+# Copy in sample contract files from the repo fixtures
+Hide
+Type "cp $REPO_ROOT/tests/fixtures/odps/generation_product.odps.yaml contracts/products/"
 Enter
-Sleep 500ms
-Type "cp -r ~/contracts/schemas/* contracts/schemas/"
+Sleep 300ms
+Type "cp $REPO_ROOT/tests/fixtures/odcs/customer_summary.odcs.yaml contracts/schemas/"
 Enter
-Sleep 500ms
+Sleep 300ms
+Type "cp $REPO_ROOT/tests/fixtures/odcs/simple_table.odcs.yaml contracts/schemas/"
+Enter
+Sleep 300ms
+Show
 
 # Generate dbt artifacts
 Type "dbt-contracts generate --yolo-mode"

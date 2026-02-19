@@ -37,6 +37,8 @@ jobs:
         run: pip install -e .
       - name: Generate terminal recording GIFs
         if: steps.gif-cache.outputs.cache-hit != 'true'
+        env:
+          REPO_ROOT: ${{ github.workspace }}
         run: |
           mkdir -p docs/assets/gifs
           for tape in docs/tapes/*.tape; do
