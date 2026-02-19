@@ -381,3 +381,51 @@ class TestQualityProduct:
             isinstance(t, dict) and "dbt_expectations.expect_column_values_to_not_be_null" in t
             for t in amt_tests
         ), f"Expected not-null test on amount, got: {amt_tests}"
+
+
+class TestMetadataProduct:
+    """metadata_product uses a contract with rich metadata on the output port."""
+
+    def test_schema_yml_has_metadata(self, tmp_path: Path) -> None:
+        """Schema YAML includes tags, meta, and enriched description from contract + product."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            ODPS_FIXTURES / "metadata_product.odps.yaml",
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=ODPS_FIXTURES,
+        )
+        write_files(planned)
+
+        schema = yaml.safe_load((models_dir / "schema.yml").read_text())
+        model = next(m for m in schema["models"] if m["name"] == "customer_finance")
+
+        # Tags from both contract and product
+        tags = model.get("tags", [])
+        assert "finance" in tags
+        assert "pii" in tags
+        assert "production" in tags
+        assert "daily" in tags
+
+        # Description includes structured parts
+        desc = model.get("description", "")
+        assert "Provide enriched customer financial data." in desc
+        assert "**Limitations:**" in desc
+        assert "**Usage:**" in desc
+
+        # Meta: owner from contract team
+        meta = model.get("config", {}).get("meta", {})
+        assert meta.get("owner") == "Alice Owner"
+
+        # Meta: domain from product
+        assert meta.get("domain") == "analytics"
+
+        # Column-level: criticalDataElement
+        columns = model.get("columns", [])
+        revenue_col = next((c for c in columns if c["name"] == "annual_revenue"), None)
+        assert revenue_col is not None
+        col_meta = revenue_col.get("meta", {})
+        assert col_meta.get("critical_data_element") is True
+        assert col_meta.get("business_name") == "Annual Revenue"

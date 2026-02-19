@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 
 from dbt_contracts.generators.exporter import export_model_schema, export_sources
+from dbt_contracts.generators.metadata import inject_metadata
 from dbt_contracts.generators.quality import inject_quality_tests
 from dbt_contracts.odcs.parser import load_odcs_by_id
 from dbt_contracts.odps.parser import load_odps
@@ -177,6 +178,8 @@ def _process_output_ports(
     contract_to_port: dict[str, str],
     contract_to_first_table: dict[str, str],
     ref_contracts: set[str],
+    product_tags: list[str] | None = None,
+    product_domain: str | None = None,
 ) -> tuple[list[str], list[tuple[str, str]]]:
     """Export model YAML and generate model SQL for each output port.
 
@@ -195,6 +198,7 @@ def _process_output_ports(
 
         model_yaml = export_model_schema(contract)
         model_yaml = inject_quality_tests(model_yaml, contract)
+        model_yaml = inject_metadata(model_yaml, contract, product_tags, product_domain)
         model_yamls.append(model_yaml)
 
         if not contract.schema_:
@@ -257,7 +261,13 @@ def plan_for_product(
 
     source_yamls, contract_to_first_table = _process_input_ports(input_ports, odcs_dir, ref_contracts)
     model_yamls, model_sqls = _process_output_ports(
-        output_ports, odcs_dir, contract_to_port, contract_to_first_table, ref_contracts,
+        output_ports,
+        odcs_dir,
+        contract_to_port,
+        contract_to_first_table,
+        ref_contracts,
+        product_tags=product.tags,
+        product_domain=product.domain,
     )
 
     # --- Build GeneratedFile list with drift status ---

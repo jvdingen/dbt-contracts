@@ -1,0 +1,46 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: meta-0001-0002-0003-000000000001
+name: Metadata Contract
+version: 1.0.0
+status: active
+tags:
+  - finance
+  - pii
+description:
+  purpose: Provide enriched customer financial data.
+  limitations: Data is delayed by up to 24 hours.
+  usage: Use for internal reporting only.
+team:
+  name: Data Platform Team
+  members:
+    - name: Alice Owner
+      role: owner
+    - name: Bob Dev
+      role: developer
+schema:
+  - name: customer_finance
+    physicalName: raw_customer_finance
+    physicalType: table
+    description: Customer financial summary
+    properties:
+      - name: customer_id
+        logicalType: string
+        physicalType: varchar
+        primaryKey: true
+        required: true
+        description: Unique customer identifier
+        classification: internal
+        tags:
+          - identifier
+      - name: annual_revenue
+        logicalType: number
+        physicalType: decimal
+        required: true
+        description: Total annual revenue
+        criticalDataElement: true
+        businessName: Annual Revenue
+      - name: segment
+        logicalType: string
+        physicalType: varchar
+        description: Customer segment
