@@ -1,0 +1,19 @@
+apiVersion: v1.0.0
+kind: DataProduct
+name: Quality Test Product
+id: qual-test-0001-0002-0003-000000000001
+domain: testing
+status: draft
+inputPorts:
+  - name: rawinput
+    version: 1.0.0
+    contractId: dbb7b1eb-7628-436e-8914-2a00638ba6db
+outputPorts:
+  - name: qualityoutput
+    description: Output with quality rules
+    type: tables
+    version: 1.0.0
+    contractId: ec2a112d-5cfe-49f3-8760-f9cfb4597544
+    inputContracts:
+      - id: dbb7b1eb-7628-436e-8914-2a00638ba6db
+        version: 1.0.0

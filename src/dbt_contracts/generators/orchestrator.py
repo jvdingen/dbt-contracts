@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 
 from dbt_contracts.generators.exporter import export_model_schema, export_sources
+from dbt_contracts.generators.quality import inject_quality_tests
 from dbt_contracts.odcs.parser import load_odcs_by_id
 from dbt_contracts.odps.parser import load_odps
 from dbt_contracts.odps.schema import InputPort, OutputPort
@@ -192,7 +193,9 @@ def _process_output_ports(
             logger.warning("Skipping output port '%s': contract '%s' not found", port.name, port.contractId)
             continue
 
-        model_yamls.append(export_model_schema(contract))
+        model_yaml = export_model_schema(contract)
+        model_yaml = inject_quality_tests(model_yaml, contract)
+        model_yamls.append(model_yaml)
 
         if not contract.schema_:
             continue

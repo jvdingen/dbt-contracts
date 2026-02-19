@@ -16,13 +16,38 @@ schema:
         primaryKey: true
         required: true
         description: Unique transaction identifier
+        quality:
+          - metric: duplicateValues
+            description: Transaction IDs must be unique
+            mustBe: 0
       - name: amount
         logicalType: number
         physicalType: decimal
         required: true
         description: Transaction amount
+        quality:
+          - metric: nullValues
+            description: Amount must not be null
+            mustBe: 0
     quality:
       - type: sql
         description: Transaction amounts must be positive
-        query: SELECT COUNT(*) FROM online_transactions WHERE amount <= 0
+        query: amount > 0
         mustBe: 0
+      - type: custom
+        engine: dbt
+        description: Custom dict test
+        implementation:
+          my_custom_test:
+            arg1: value1
+      - type: custom
+        engine: dbt
+        description: Custom string test
+        implementation: my_simple_test
+      - type: custom
+        engine: dbt
+        description: Warn-level test
+        severity: warn
+        implementation:
+          my_warn_test:
+            threshold: 10

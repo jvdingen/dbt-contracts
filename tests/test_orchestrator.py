@@ -318,3 +318,66 @@ class TestRefDetection:
         names = [f.name for f in files]
         # No sources.yml since the only input is a ref, not a raw source
         assert "sources.yml" not in names
+
+
+class TestQualityProduct:
+    """quality_product uses a contract with quality rules on the output port."""
+
+    def test_schema_yml_has_quality_tests(self, tmp_path: Path) -> None:
+        """Schema YAML includes data_tests generated from ODCS quality rules."""
+        models_dir = tmp_path / "models"
+        sources_dir = tmp_path / "sources"
+        planned = plan_for_product(
+            ODPS_FIXTURES / "quality_product.odps.yaml",
+            ODCS_FIXTURES,
+            models_dir,
+            sources_dir,
+            odps_dir=ODPS_FIXTURES,
+        )
+        write_files(planned)
+
+        schema = yaml.safe_load((models_dir / "schema.yml").read_text())
+        model = next(m for m in schema["models"] if m["name"] == "online_transactions")
+
+        # Table-level: SQL rule should produce expression_is_true test
+        table_tests = model.get("data_tests", [])
+        assert any(
+            isinstance(t, dict) and "dbt_utils.expression_is_true" in t
+            for t in table_tests
+        ), f"Expected expression_is_true in table data_tests, got: {table_tests}"
+
+        # Table-level: custom dict test
+        assert any(
+            isinstance(t, dict) and "my_custom_test" in t
+            for t in table_tests
+        ), f"Expected my_custom_test in table data_tests, got: {table_tests}"
+
+        # Table-level: custom string test
+        assert "my_simple_test" in table_tests, f"Expected my_simple_test in table data_tests, got: {table_tests}"
+
+        # Table-level: severity on warn test
+        warn_test = next(
+            (t for t in table_tests if isinstance(t, dict) and "my_warn_test" in t),
+            None,
+        )
+        assert warn_test is not None, f"Expected my_warn_test in table data_tests, got: {table_tests}"
+        assert warn_test["config"]["severity"] == "warn"
+
+        # Column-level: transaction_id should have uniqueness test
+        columns = model.get("columns", [])
+        tid_col = next((c for c in columns if c["name"] == "transaction_id"), None)
+        assert tid_col is not None
+        col_tests = tid_col.get("data_tests", [])
+        assert any(
+            isinstance(t, dict) and "dbt_expectations.expect_column_values_to_be_unique" in t
+            for t in col_tests
+        ), f"Expected uniqueness test on transaction_id, got: {col_tests}"
+
+        # Column-level: amount should have not-null test
+        amt_col = next((c for c in columns if c["name"] == "amount"), None)
+        assert amt_col is not None
+        amt_tests = amt_col.get("data_tests", [])
+        assert any(
+            isinstance(t, dict) and "dbt_expectations.expect_column_values_to_not_be_null" in t
+            for t in amt_tests
+        ), f"Expected not-null test on amount, got: {amt_tests}"

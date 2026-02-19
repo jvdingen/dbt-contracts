@@ -49,8 +49,10 @@ class TestLoadOdcs:
         schema = contract.schema_[0]
         assert schema.name == "online_transactions"
         assert schema.quality is not None
-        assert len(schema.quality) == 1
+        assert len(schema.quality) == 4
         assert schema.quality[0].type == "sql"
+        assert schema.quality[1].type == "custom"
+        assert schema.quality[1].engine == "dbt"
 
     def test_nonexistent_file(self) -> None:
         """Loading a non-existent file raises an error."""
