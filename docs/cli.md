@@ -56,6 +56,8 @@ The scaffolded project structure:
 
 ## `generate`
 
+![Generate with drift detection](assets/gifs/generate-drift.gif)
+
 Generate dbt artifacts from ODPS product definitions. The command is **drift-aware**: it compares generated output against existing files on disk and reports what changed.
 
 - **New files** are written directly without prompting.
@@ -87,6 +89,8 @@ Exit code is 1 if no files were generated (missing directories, no products foun
 In interactive mode, `--yolo-mode` is ignored — the command always prompts for changed files.
 
 ## `validate`
+
+![Validation demo](assets/gifs/validate.gif)
 
 Validate ODCS contracts.
 
@@ -155,6 +159,8 @@ dbt-contracts config import team-config.toml
 Boolean values accept `true`/`false`, `yes`/`no`, `1`/`0`. Constrained string values are validated against their allowed options. Run `config set` with an invalid key to see all available keys with descriptions.
 
 ## Interactive mode
+
+![Interactive mode](assets/gifs/interactive.gif)
 
 Running `dbt-contracts` without a subcommand launches an interactive menu (when `cli_mode = "interactive"`, the default):
 

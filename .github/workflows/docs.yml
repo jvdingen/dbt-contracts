@@ -19,6 +19,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - uses: charmbracelet/setup-vhs-action@v2
+      - name: Generate terminal recording GIFs
+        run: |
+          mkdir -p docs/assets/gifs
+          pip install -e .
+          for tape in docs/tapes/*.tape; do
+            [ -f "$tape" ] || continue
+            name="$(basename "$tape" .tape)"
+            vhs "$tape" -o "docs/assets/gifs/${name}.gif"
+          done
       - run: pip install zensical
       - run: pip install mkdocstrings-python
       - run: zensical build --clean

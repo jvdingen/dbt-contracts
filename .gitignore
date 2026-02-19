@@ -210,3 +210,6 @@ __marimo__/
 .DS_Store
 
 contracts/
+
+# VHS-generated terminal recordings (built in CI)
+docs/assets/gifs/*.gif

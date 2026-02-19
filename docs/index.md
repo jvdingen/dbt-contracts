@@ -35,6 +35,8 @@ dbt-contracts --help
 
 ## Quick Start
 
+![Quick start demo](assets/gifs/quickstart.gif)
+
 ### 1. Initialize a project
 
 ```sh

@@ -27,6 +27,23 @@ check *args:
 docs *args:
     uv run zensical build {{args}}
 
+# Generate terminal recording GIFs (requires vhs on PATH)
+[group('docs')]
+gifs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v vhs >/dev/null || { echo "vhs not installed, skipping GIF generation"; exit 0; }
+    mkdir -p docs/assets/gifs
+    for tape in docs/tapes/*.tape; do
+        [ -f "$tape" ] || continue
+        name="$(basename "$tape" .tape)"
+        out="docs/assets/gifs/${name}.gif"
+        if [ ! -f "$out" ] || [ "$tape" -nt "$out" ]; then
+            echo "Recording $name..."
+            vhs "$tape" -o "$out"
+        fi
+    done
+
 run:
     uv run python -m src.main
 

@@ -1,0 +1,48 @@
+Set Shell "bash"
+Set FontSize 14
+Set Width 1200
+Set Height 600
+Set Theme "Catppuccin Mocha"
+Set TypingSpeed 50ms
+
+Output docs/assets/gifs/interactive.gif
+
+# Launch interactive mode
+Type "dbt-contracts"
+Enter
+Sleep 2s
+
+# Navigate to Configuration
+Down 3
+Sleep 300ms
+Enter
+Sleep 2s
+
+# Select "Edit a setting"
+Down
+Sleep 300ms
+Enter
+Sleep 2s
+
+# Select a setting and change it
+Down
+Sleep 300ms
+Enter
+Sleep 1s
+
+# Type a new value
+Type "build"
+Enter
+Sleep 2s
+
+# Go back with Ctrl+C
+Ctrl+C
+Sleep 1s
+
+# Navigate to Exit
+Down 4
+Sleep 300ms
+Enter
+Sleep 1s
+
+Sleep 1s
