@@ -48,12 +48,18 @@ dbt-contracts validate [--contracts-dir PATH]
 
 ### `generate`
 
-*Available in Phase 5.*
+Generate dbt models, sources, and SQL from validated contracts.
 
-Generate dbt models, schema files, and tests from validated contracts.
+Runs validation first (unless `--skip-validation` is set), then generates:
+
+- **Source YAML** — One `sources.yml` per upstream source in `sources_dir`
+- **Model YAML** — One `schema.yml` per model in `models_dir`
+- **Staging SQL** — One `.sql` per model with `{{ source() }}` or `{{ ref() }}` references
+
+Files include a header comment marking them as managed. On subsequent runs, managed files are overwritten while user-modified files are skipped (unless `--force`).
 
 ```bash
-dbt-contracts generate [--contracts-dir PATH] [--output-dir PATH] [--force]
+dbt-contracts generate [OPTIONS]
 ```
 
 **Options:**
@@ -61,55 +67,101 @@ dbt-contracts generate [--contracts-dir PATH] [--output-dir PATH] [--force]
 | Option | Default | Description |
 |---|---|---|
 | `--contracts-dir` | `./contracts` | Path to the contracts directory |
-| `--output-dir` | From config `generation.models_dir` | Path to the dbt models output directory |
-| `--force` | `false` | Overwrite existing files without confirmation |
+| `--models-dir` | From config `generation.models_dir` | Override models output directory |
+| `--sources-dir` | From config `generation.sources_dir` | Override sources output directory |
+| `--force` | `false` | Overwrite non-managed files |
+| `--dry-run` | `false` | Preview generated files without writing to disk |
+| `--skip-validation` | `false` | Skip validation before generating |
+
+**Exit codes:**
+
+| Code | Meaning |
+|---|---|
+| 0 | Generation succeeded |
+| 1 | Validation failed or contracts directory not found |
 
 ### `init`
 
-*Available in Phase 6.*
+Initialize a `contracts/` directory with default configuration and subdirectories.
 
-Initialize a `contracts/` directory in the current dbt project with sample files.
+Creates:
+- `contracts/config.yaml` — Commented config template
+- `contracts/contracts/` — For ODCS contract files
+- `contracts/products/` — For ODPS product files
 
-```bash
-dbt-contracts init [--dir PATH]
-```
-
-### `bootstrap`
-
-*Available in Phase 6.*
-
-Create a new dbt project from scratch using contracts.
+If `dbt_project.yml` is detected in the target directory, the config is set up accordingly.
 
 ```bash
-dbt-contracts bootstrap [--name NAME] [--contracts-dir PATH]
+dbt-contracts init [OPTIONS]
 ```
+
+**Options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--dir` | `.` | Directory where `contracts/` will be created |
+| `--force` | `false` | Overwrite existing `contracts/` directory |
+
+**Exit codes:**
+
+| Code | Meaning |
+|---|---|
+| 0 | Initialization succeeded |
+| 1 | `contracts/` already exists (use `--force` to overwrite) |
 
 ### `diff`
 
-*Available in Phase 7.*
-
-Show differences between contracts and the current dbt project state.
+Show drift between contracts and the current dbt project state. Generates expected output in memory and compares with on-disk files.
 
 ```bash
-dbt-contracts diff [--contracts-dir PATH]
+dbt-contracts diff [OPTIONS]
 ```
+
+**Options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--contracts-dir` | `./contracts` | Path to the contracts directory |
+| `--models-dir` | From config | Override models output directory |
+| `--sources-dir` | From config | Override sources output directory |
+| `--format` | `text` | Output format: `text` or `json` |
+
+**Exit codes:**
+
+| Code | Meaning |
+|---|---|
+| 0 | No drift detected |
+| 1 | Drift detected (new or modified files) |
 
 ### `sync`
 
-*Available in Phase 7.*
-
-Update the dbt project to match the current contracts.
+Sync the dbt project with contracts by applying any detected drift. Shows a preview of changes before applying.
 
 ```bash
-dbt-contracts sync [--contracts-dir PATH] [--force]
+dbt-contracts sync [OPTIONS]
 ```
+
+**Options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--contracts-dir` | `./contracts` | Path to the contracts directory |
+| `--models-dir` | From config | Override models output directory |
+| `--sources-dir` | From config | Override sources output directory |
+| `--yes` | `false` | Apply changes without confirmation |
 
 ### `import`
 
-*Available in Phase 7.*
-
-Generate ODCS contracts from an existing dbt `schema.yml`.
+Generate ODCS contract stubs from existing dbt schema YAML files. Parses sources and models, creating draft contracts with column definitions and constraints.
 
 ```bash
-dbt-contracts import [--schema PATH] [--output-dir PATH]
+dbt-contracts import SCHEMA_FILES... [OPTIONS]
 ```
+
+**Options:**
+
+| Option | Default | Description |
+|---|---|---|
+| `--output-dir` | `contracts/contracts` | Directory for generated contract files |
+| `--server-type` | `snowflake` | Default server type for contracts |
+| `--dry-run` | `false` | Preview without writing files |

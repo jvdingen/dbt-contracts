@@ -5,7 +5,7 @@ A CLI tool that uses the [Bitol ODCS](https://bitol-io.github.io/open-data-contr
 ## Project Vision
 
 - **Contract-first dbt development**: Define data contracts (ODCS) and data products (ODPS), then generate dbt models, schemas, and tests from them.
-- **CLI-driven workflow**: Provide CLI commands for bootstrapping new dbt projects from contracts, and for managing contracts within existing dbt projects.
+- **CLI-driven workflow**: Provide CLI commands for initializing, generating, validating, diffing, syncing, and importing contracts.
 - **`/contracts` convention**: Every dbt project managed by this tool has a `/contracts` directory containing CLI config, ODCS contract YAML files, and ODPS product YAML files.
 - **Powered by the official SDK**: Uses [`open-data-contract-standard`](https://pypi.org/project/open-data-contract-standard/) Python SDK (Pydantic v2 models) for parsing, validating, and generating ODCS contracts.
 
@@ -50,6 +50,18 @@ The tool registers two CLI entry points:
 
 Both invoke the same click group.
 
+## Commands
+
+| Command | Description |
+|---|---|
+| `dbt-contracts version` | Show version |
+| `dbt-contracts validate` | Validate all contracts and products |
+| `dbt-contracts generate` | Generate dbt models, sources, and SQL from contracts |
+| `dbt-contracts init` | Initialize `/contracts` directory |
+| `dbt-contracts diff` | Show drift between contracts and dbt project |
+| `dbt-contracts sync` | Sync dbt project with contracts |
+| `dbt-contracts import` | Generate ODCS contracts from existing dbt schema YAML |
+
 ## Project Structure
 
 ```
@@ -58,15 +70,19 @@ dbt-contracts/
 │   └── dbt_contracts/
 │       ├── __init__.py           # Package version
 │       ├── cli/
-│       │   └── __init__.py       # Click group (version, validate commands)
-│       ├── core/                 # Core logic (generation, validation)
-│       │   ├── __init__.py
+│       │   └── __init__.py       # Click group (all commands)
+│       ├── core/
+│       │   ├── __init__.py       # Public exports
 │       │   ├── adapter.py        # Adapter wrapping datacontract-cli exporters
+│       │   ├── differ.py         # Drift detection (diff engine)
 │       │   ├── discovery.py      # Contract/product file scanning
+│       │   ├── generator.py      # dbt artifact generation orchestrator
+│       │   ├── importer.py       # dbt YAML → ODCS contract stubs
+│       │   ├── init.py           # Project scaffolding
 │       │   └── validation.py     # ODCS lint, cross-ref, status checks
 │       ├── models/               # Pydantic models (config, ODPS)
 │       │   └── __init__.py
-│       └── templates/            # Jinja2 templates for dbt artifacts
+│       └── templates/            # Jinja2 templates (reserved)
 ├── tests/
 │   ├── fixtures/                 # ODCS/ODPS test fixtures
 │   │   ├── *.odcs.yaml           # Individual contract fixtures
@@ -75,8 +91,17 @@ dbt-contracts/
 │   ├── conftest.py
 │   ├── test_adapter.py           # Adapter layer tests
 │   ├── test_cli.py               # CLI smoke tests
+│   ├── test_cli_diff_sync_import.py  # Diff/sync/import command tests
+│   ├── test_cli_generate.py      # Generate command tests
+│   ├── test_cli_init.py          # Init command tests
 │   ├── test_cli_validate.py      # Validate command tests
+│   ├── test_config.py            # Config model tests
+│   ├── test_differ.py            # Differ module tests
 │   ├── test_discovery.py         # Discovery module tests
+│   ├── test_generator.py         # Generator module tests
+│   ├── test_importer.py          # Importer module tests
+│   ├── test_init.py              # Init module tests
+│   ├── test_odps.py              # ODPS model tests
 │   └── test_validation.py        # Validation logic tests
 ├── docs/
 │   ├── index.md                  # Homepage
@@ -120,89 +145,32 @@ my-dbt-project/
 └── ...
 ```
 
-## Development Phases
+## Core Architecture
 
-### Phase 0: Project Scaffolding ✅
-**Goal**: Reviewable project skeleton with all tooling configured.
+### Adapter Layer (`core/adapter.py`)
+Thin adapter wrapping datacontract-cli for linting and lineage-aware dbt rendering:
+- `lint()` validates ODCS contracts via datacontract-cli (serializes to YAML string first)
+- `render()` takes contracts + products, classifies via ODPS lineage, returns parsed dicts
+- Lineage: `outputPorts` → models, `inputPorts` → sources, `inputPorts` that are also `outputPorts` of another ODPS → refs
+- Staging SQL uses `{{ source() }}` for pure sources, `{{ ref() }}` for intermediate models
 
-1. **pyproject.toml** — Package metadata, dependencies, entry points, ruff/pytest config
-2. **justfile** — Commands: install, test, lint, format, docs, docs-serve, build, clean
-3. **zensical.toml** — Documentation site configuration
-4. **Source skeleton** — `src/dbt_contracts/` with `__init__.py`, cli/, core/, models/, templates/
-5. **CLI entry point** — Click group with `version` command, dual entry points (`dbt-contracts` + `dbtc`)
-6. **Test skeleton** — conftest.py + basic CLI smoke test
-7. **Documentation skeleton** — All docs/ pages with initial content
-8. **README.md** — Project overview with badges and quickstart
+### Discovery (`core/discovery.py`)
+Scans `contracts/` directory, loads config (with fallback defaults), parses all ODCS and ODPS files.
 
-### Phase 1: Core Models ✅
-**Goal**: Config model and hand-rolled ODPS Pydantic models.
+### Validation (`core/validation.py`)
+Three passes: ODCS lint, cross-reference validation (gated by config), status threshold checks.
 
-1. **Core config model** — Pydantic model for `contracts/config.yaml` (project settings, mappings)
-2. **ODPS model** — Pydantic model for ODPS v1.0.0 (hand-rolled from spec, matching ODCS SDK methodology)
-3. **Tests** — Unit tests for config and ODPS model loading/validation
-4. **Docs** — Update configuration.md and products.md
+### Generator (`core/generator.py`)
+Orchestrates render → post-process → write: one `.yml` + one `.sql` per model, sources in separate dir. Overwrite protection via header detection, `--force` override, `--dry-run` support.
 
-### Phase 2: Adapter Layer ✅
-**Goal**: Thin adapter wrapping datacontract-cli for linting and lineage-aware dbt rendering.
+### Differ (`core/differ.py`)
+Generates expected output in memory (dry-run), compares with on-disk state. Reports new/modified/unchanged.
 
-1. **datacontract-cli dependency** — Added as library for dbt export and ODCS validation
-2. **Adapter module** (`core/adapter.py`) — `lint()` validates ODCS via datacontract-cli; `render()` takes contracts + products, classifies via ODPS lineage, returns parsed dicts
-3. **Lineage classification** — ODPS `outputPorts` → models, `inputPorts` → sources, `inputPorts` that are also `outputPorts` of another ODPS → refs
-4. **Staging SQL** — References upstream contracts via `source()` or `ref()` based on lineage
-5. **Result models** — `LintResult`, `GenerationResult` Pydantic models
-6. **Tests** — 16 tests against real datacontract-cli with ODCS/ODPS fixtures
+### Importer (`core/importer.py`)
+Parses dbt schema YAML (sources and models), generates ODCS contract stubs with columns and constraints.
 
-### Phase 3: Contract Discovery ✅
-**Goal**: Scan `/contracts` directory, parse and load all ODCS and ODPS files.
-
-1. **Discovery module** (`core/discovery.py`) — Scan `contracts/*.odcs.yaml` and `products/*.odps.yaml`
-2. **Config loading** — Load `config.yaml` from contracts directory, fall back to defaults
-3. **Tests** — Discovery with valid/invalid directory structures
-
-### Phase 4: Validation ✅
-**Goal**: Validate contracts and cross-references, expose via CLI.
-
-1. **Validation module** (`core/validation.py`) — ODCS lint via adapter, cross-reference checks (gated by `config.validation.cross_reference`), status threshold checks (against `config.validation.min_status`)
-2. **`validate` CLI command** — Runs discovery + validation, structured error output, exit code 1 on failure
-3. **Tests** — Valid/invalid contracts, broken cross-refs, status thresholds, cross-ref disabled
-
-### Phase 5: dbt Generation
-**Goal**: Full generation of model YAMLs, source YAMLs, and SQL from contracts.
-
-1. **Post-processor** (`core/postprocess.py`) — Inject headers, ODPS metadata, strip tests per config, SLA/custom metadata mapping
-2. **SQL enhancer** (`core/sql_enhancer.py`) — Casting, renaming on top of adapter staging SQL (using `sqlglot`)
-3. **Generator orchestrator** (`core/generator.py`) — Discovery → render via adapter → post-process → write files, overwrite protection
-4. **`generate` CLI command** — `--contracts-dir`, `--output-dir`, `--force`, `--dry-run`, `--server-type`, `--contract`
-5. **Tests** — Snapshot tests comparing generated output to expected dbt artifacts
-
-### Phase 6: Init & Bootstrap
-**Goal**: Project scaffolding for new and existing dbt projects.
-
-1. **`init` command** — Create `/contracts` structure, default config, detect existing `dbt_project.yml`
-2. **`bootstrap` command** — Init + sample contracts + run generate
-3. **Tests** — End-to-end: init → add contracts → generate → valid dbt project
-
-### Phase 7: Diff, Sync & Import
-**Goal**: Keep dbt project in sync with contracts over time.
-
-1. **Diff engine** (`core/differ.py`) — Generate expected in memory, compare with on-disk
-2. **`diff` command** — Human-readable or JSON output, exit code 1 on drift
-3. **`sync` command** — Apply diff changes, interactive confirmation or `--yes`
-4. **`import` command** — Parse existing dbt YAML, generate ODCS contract stubs
-5. **CI integration** — `--format json` for all commands, documented exit codes
-
-## Commands
-
-| Command | Description | Phase |
-|---|---|---|
-| `dbt-contracts version` | Show version | 0 ✅ |
-| `dbt-contracts validate` | Validate all contracts and products | 4 |
-| `dbt-contracts generate` | Generate dbt models from contracts | 5 |
-| `dbt-contracts init` | Initialize `/contracts` directory | 6 |
-| `dbt-contracts bootstrap` | Create full dbt project from contracts | 6 |
-| `dbt-contracts diff` | Show drift between contracts and dbt | 7 |
-| `dbt-contracts sync` | Sync dbt project with contracts | 7 |
-| `dbt-contracts import` | Generate contracts from existing dbt | 7 |
+### Init (`core/init.py`)
+Scaffolds `contracts/` directory with config template, detects `dbt_project.yml`.
 
 ## just Commands
 

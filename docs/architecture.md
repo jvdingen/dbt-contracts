@@ -22,9 +22,13 @@ ODPS Products (.odps.yaml)   ─┘
 │                  Core                            │
 │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
 │  │ Discovery│  │Validation│  │  Generation    │  │
-│  │          │  │          │  │               │  │
 │  │ Scan &   │  │ Schema   │  │ Post-process  │  │
 │  │ load     │  │ & xref   │  │ & write files │  │
+│  └──────────┘  └──────────┘  └───────────────┘  │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
+│  │  Differ  │  │  Init    │  │  Importer     │  │
+│  │ Drift    │  │ Scaffold │  │ dbt → ODCS    │  │
+│  │ detect   │  │ project  │  │ contracts     │  │
 │  └──────────┘  └──────────┘  └───────────────┘  │
 │  ┌────────────────────────────────────────────┐  │
 │  │              Adapter                        │  │
@@ -60,10 +64,11 @@ The discovery module scans the `contracts/` directory:
 
 ### 2. Validation
 
-Validation runs in two passes:
+Validation runs in three passes:
 
 1. **Schema validation** — Each ODCS contract is validated against the JSON schema via the adapter's `lint()` function (delegates to datacontract-cli)
-2. **Cross-reference validation** — All `contractId` fields in ODPS products are checked against loaded ODCS contract IDs
+2. **Cross-reference validation** — All `contractId` fields in ODPS products are checked against loaded ODCS contract IDs (gated by `validation.cross_reference` config)
+3. **Status checks** — Contract statuses are checked against the `validation.min_status` threshold
 
 ### 3. Adapter (rendering)
 
@@ -108,6 +113,14 @@ The datacontract-cli exporters handle the heavy mapping:
 | Composite primary keys | `dbt_utils.unique_combination_of_columns` |
 | `description` | `description` field |
 | `team` | `meta.owner` field |
+
+### 5. Diff and sync
+
+The differ (`core/differ.py`) generates expected output in memory (via a dry-run generate) and compares each file with its on-disk counterpart. Each file is classified as **new**, **modified**, or **unchanged**. The `sync` command applies detected drift by re-running generation with `force=True`.
+
+### 6. Import
+
+The importer (`core/importer.py`) reads existing dbt `schema.yml` files and generates ODCS contract stubs. It handles both `sources` and `models` definitions, mapping columns, constraints, and data_tests back to ODCS properties.
 
 ## Standards
 

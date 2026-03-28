@@ -34,11 +34,11 @@ dbt-contracts generate
 | Feature | Description |
 |---|---|
 | **Contract validation** | Parse and validate ODCS contracts and ODPS product definitions |
-| **dbt generation** | Generate models, schema.yml, sources, and tests from contracts |
+| **dbt generation** | Generate models, schema.yml, sources, and staging SQL from contracts |
 | **Quality mapping** | Automatically map ODCS quality checks to dbt tests |
-| **Bootstrapping** | Create new dbt projects entirely from contracts |
-| **Drift detection** | Compare dbt models against their contracts |
-| **Bidirectional sync** | Import existing dbt schemas as contracts, or sync contracts to dbt |
+| **Project init** | Scaffold a `contracts/` directory in any dbt project |
+| **Drift detection** | Compare dbt models against their contracts with `diff` |
+| **Sync & import** | Sync contracts to dbt, or import existing dbt schemas as contracts |
 
 ## Next steps
 

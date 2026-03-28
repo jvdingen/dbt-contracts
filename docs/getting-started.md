@@ -26,7 +26,7 @@ just install
 
 - Python 3.10 or later
 - An existing dbt project (for `init`, `validate`, `generate`, `sync` commands)
-- Or start fresh with `bootstrap` to create a new dbt project from contracts
+- Or use `import` to generate contracts from an existing dbt `schema.yml`
 
 ## Your first contract
 
@@ -38,20 +38,18 @@ Navigate to your dbt project and run:
 dbt-contracts init
 ```
 
-This creates the `contracts/` directory with a sample configuration, contract, and product file:
+This creates the `contracts/` directory with a default configuration:
 
 ```
 contracts/
 ├── config.yaml
 ├── contracts/
-│   └── example.odcs.yaml
 └── products/
-    └── example.odps.yaml
 ```
 
-### 2. Edit your contract
+### 2. Create a contract
 
-Open `contracts/contracts/example.odcs.yaml` and define your data contract:
+Create a file at `contracts/contracts/orders.odcs.yaml`:
 
 ```yaml
 kind: DataContract
@@ -108,6 +106,16 @@ The tool is also available as `dbtc` for convenience:
 dbt-contracts validate
 dbtc validate
 ```
+
+## Importing from existing dbt projects
+
+Already have a dbt project with `schema.yml` files? Generate contract stubs:
+
+```bash
+dbt-contracts import models/schema.yml --output-dir contracts/contracts
+```
+
+Then refine the generated contracts and add ODPS product definitions.
 
 ## Next steps
 

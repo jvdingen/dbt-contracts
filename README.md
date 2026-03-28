@@ -19,8 +19,14 @@ dbt-contracts init
 # Validate contracts
 dbt-contracts validate
 
-# Generate dbt models
+# Generate dbt models, sources, and SQL
 dbt-contracts generate
+
+# Check for drift between contracts and dbt project
+dbt-contracts diff
+
+# Import contracts from existing dbt schema files
+dbt-contracts import models/schema.yml
 ```
 
 ## Documentation
