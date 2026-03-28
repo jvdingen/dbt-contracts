@@ -1,0 +1,44 @@
+[project]
+site_name = "dbt-contracts"
+site_description = "Generate and manage dbt projects through Bitol ODCS/ODPS data contracts"
+site_author = "Joeri Van Dingenen"
+copyright = "Copyright &copy; 2026 Joeri Van Dingenen"
+repo_url = "https://github.com/jvdingen/dbt-contracts"
+
+[project.theme]
+language = "en"
+icon.logo = "lucide/file-check"
+icon.repo = "fontawesome/brands/github"
+features = [
+    "content.code.copy",
+    "content.code.annotate",
+    "navigation.footer",
+    "navigation.instant",
+    "navigation.path",
+    "navigation.tabs",
+    "navigation.top",
+    "navigation.tracking",
+    "search.highlight",
+    "search.suggest",
+    "toc.follow",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "teal"
+accent = "amber"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "teal"
+accent = "amber"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to light mode"
+
+[project.plugins.mkdocstrings]
+[project.plugins.mkdocstrings.handlers.python]
+options.docstring_style = "google"
+options.show_source = true
+options.show_root_heading = true
