@@ -23,15 +23,28 @@ ODPS Products (.odps.yaml)   ─┘
 │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
 │  │ Discovery│  │Validation│  │  Generation    │  │
 │  │          │  │          │  │               │  │
-│  │ Scan &   │  │ Schema   │  │ Models, YAML, │  │
-│  │ load     │  │ & xref   │  │ SQL, tests    │  │
+│  │ Scan &   │  │ Schema   │  │ Post-process  │  │
+│  │ load     │  │ & xref   │  │ & write files │  │
 │  └──────────┘  └──────────┘  └───────────────┘  │
+│  ┌────────────────────────────────────────────┐  │
+│  │              Adapter                        │  │
+│  │  lint() ─ ODCS validation                   │  │
+│  │  render() ─ lineage-aware dbt generation    │  │
+│  │  Wraps datacontract-cli exporters           │  │
+│  └────────────────────────────────────────────┘  │
 ├─────────────────────────────────────────────────┤
 │                  Models                          │
 │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
 │  │ Config   │  │ ODPS     │  │ ODCS (SDK)    │  │
 │  │ (custom) │  │ (custom) │  │               │  │
 │  └──────────┘  └──────────┘  └───────────────┘  │
+├─────────────────────────────────────────────────┤
+│             External Libraries                   │
+│  ┌──────────────────┐  ┌──────────────────────┐  │
+│  │ datacontract-cli │  │ open-data-contract-  │  │
+│  │ (dbt exporters,  │  │ standard (ODCS SDK)  │  │
+│  │  linting)        │  │                      │  │
+│  └──────────────────┘  └──────────────────────┘  │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -49,27 +62,52 @@ The discovery module scans the `contracts/` directory:
 
 Validation runs in two passes:
 
-1. **Schema validation** — Each contract and product is validated against its respective standard (ODCS v3.1.0, ODPS v1.0.0)
+1. **Schema validation** — Each ODCS contract is validated against the JSON schema via the adapter's `lint()` function (delegates to datacontract-cli)
 2. **Cross-reference validation** — All `contractId` fields in ODPS products are checked against loaded ODCS contract IDs
 
-### 3. Generation
+### 3. Adapter (rendering)
 
-The generator maps ODCS constructs to dbt artifacts:
+The adapter layer (`core/adapter.py`) wraps datacontract-cli's dbt exporters and adds lineage awareness:
+
+1. **Lineage classification** — Uses ODPS ports to classify each contract:
+   - `outputPorts.contractId` → **model** (gets model YAML + staging SQL)
+   - `inputPorts.contractId` → **source** (gets sources YAML)
+   - `inputPorts` that are also `outputPorts` of another ODPS → **ref** (referenced via `{{ ref() }}` instead of `{{ source() }}`)
+   - Contracts not in any port → **source** (default)
+
+2. **Per-contract rendering** — Calls datacontract-cli's `DbtExporter` or `DbtSourceExporter` per contract, resolving server type from the contract's `servers` definition
+
+3. **Staging SQL** — Builds SQL referencing upstream contracts. Uses `{{ source() }}` for pure sources and `{{ ref() }}` for contracts that are outputs of other data products
+
+Returns a `GenerationResult` with parsed dicts for sources, models, and staging SQL strings.
+
+### 4. Generation
+
+The generator takes the adapter's output and:
+
+| Adapter output | dbt artifact |
+|---|---|
+| `result.sources` | `sources.yml` per source contract |
+| `result.models` | `schema.yml` per model contract (columns, types, tests, constraints) |
+| `result.staging_sql` | `stg_*.sql` per model schema object |
+
+The datacontract-cli exporters handle the heavy mapping:
 
 | ODCS | dbt |
 |---|---|
 | SchemaObject | Model (SQL file + schema.yml entry) |
 | SchemaProperty | Column in schema.yml |
 | Server | Source in sources.yml |
-| `primaryKey: true` | `unique` + `not_null` tests |
-| `required: true` | `not_null` test |
-| `unique: true` | `unique` test |
-| Quality check (`nullValues`) | `not_null` test |
-| Quality check (`duplicateValues`) | `unique` test |
-| Quality check (`rowCount`) | Custom test |
+| `primaryKey: true` | `unique` + `not_null` constraints/tests |
+| `required: true` | `not_null` constraint/test |
+| `unique: true` | `unique` constraint/test |
+| `logicalTypeOptions.pattern` | `dbt_expectations.expect_column_values_to_match_regex` |
+| `logicalTypeOptions.minimum/maximum` | `dbt_expectations.expect_column_values_to_be_between` |
+| `logicalTypeOptions.minLength/maxLength` | `dbt_expectations.expect_column_value_lengths_to_be_between` |
+| `relationships` | `relationships` test |
+| Composite primary keys | `dbt_utils.unique_combination_of_columns` |
 | `description` | `description` field |
-| `slaProperties` | `meta` fields |
-| `team` | `meta.owners` field |
+| `team` | `meta.owner` field |
 
 ## Standards
 
@@ -78,4 +116,4 @@ dbt-contracts is built on two open standards from the [Bitol](https://bitol.io/)
 - **[ODCS v3.1.0](https://bitol-io.github.io/open-data-contract-standard/v3.1.0/)** — Defines data contracts (shape, quality, SLAs)
 - **[ODPS v1.0.0](https://bitol-io.github.io/open-data-product-standard/v1.0.0/)** — Defines data products (ports, ownership, governance)
 
-The ODCS SDK (`open-data-contract-standard` on PyPI) provides Pydantic v2 models for parsing and validating contracts. The ODPS models are hand-rolled following the same methodology.
+The ODCS SDK (`open-data-contract-standard` on PyPI) provides Pydantic v2 models for parsing and validating contracts. The ODPS models are hand-rolled following the same methodology. The `datacontract-cli` library provides dbt export and linting capabilities.

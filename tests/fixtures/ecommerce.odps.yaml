@@ -1,0 +1,15 @@
+kind: DataProduct
+apiVersion: v1.0.0
+id: ecommerce-product
+version: 1.0.0
+status: active
+name: E-Commerce Data Product
+domain: ecommerce
+inputPorts:
+  - name: raw-customers-input
+    contractId: raw-customers
+outputPorts:
+  - name: staged-orders-output
+    contractId: stg-orders
+    inputContracts:
+      - raw-customers

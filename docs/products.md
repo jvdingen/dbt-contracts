@@ -96,9 +96,23 @@ managementPorts:
 
 The `content` field must be one of: `discoverability`, `observability`, `control`, `dictionary`.
 
+## Lineage and dbt generation
+
+ODPS ports determine how contracts are rendered into dbt artifacts:
+
+| Port type | dbt artifact | SQL reference |
+|---|---|---|
+| `inputPorts.contractId` | `sources.yml` | `{{ source() }}` |
+| `outputPorts.contractId` | `schema.yml` + staging SQL | `{{ ref() }}` or `{{ source() }}` |
+| Contract not in any port | `sources.yml` (default) | `{{ source() }}` |
+
+When an `inputPort` references a contract that is also an `outputPort` of another data product, the staging SQL uses `{{ ref() }}` instead of `{{ source() }}` — recognizing it as an intermediate model rather than a raw source.
+
+The `outputPorts.inputContracts` field defines which upstream contracts a model depends on. This determines the `FROM` clause in generated staging SQL.
+
 ## Cross-reference validation
 
-When you run `dbt-contracts validate`, dbt-contracts checks that all `contractId` references in your product files resolve to actual ODCS contract files in `contracts/contracts/`. This ensures your product definitions and contracts stay in sync.
+When you run `dbt-contracts validate`, dbt-contracts checks that all `contractId` references in your product files resolve to actual ODCS contract files in `contracts/contracts/`. This can be disabled by setting `validation.cross_reference: false` in config.
 
 ## Python model
 

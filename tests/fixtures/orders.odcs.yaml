@@ -1,0 +1,39 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: stg-orders
+version: 1.0.0
+status: active
+name: Staging Orders
+domain: order
+servers:
+  - server: production
+    type: snowflake
+    account: acme.us-east-1
+    database: ANALYTICS
+    schema: STAGING
+schema:
+  - name: stg_orders
+    description: Staged order data enriched with customer references
+    physicalType: table
+    properties:
+      - name: order_id
+        logicalType: integer
+        physicalType: NUMBER
+        primaryKey: true
+        required: true
+        description: Unique order identifier
+      - name: customer_id
+        logicalType: integer
+        physicalType: NUMBER
+        required: true
+        description: Reference to the customer
+      - name: amount
+        logicalType: number
+        physicalType: NUMBER
+        required: true
+        description: Order total amount
+      - name: created_at
+        logicalType: timestamp
+        physicalType: TIMESTAMP_TZ
+        required: true
+        description: Order creation timestamp

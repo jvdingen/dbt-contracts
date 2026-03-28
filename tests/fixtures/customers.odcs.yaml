@@ -1,0 +1,39 @@
+kind: DataContract
+apiVersion: v3.1.0
+id: raw-customers
+version: 1.0.0
+status: active
+name: Raw Customers
+domain: customer
+servers:
+  - server: production
+    type: snowflake
+    account: acme.us-east-1
+    database: RAW
+    schema: PUBLIC
+schema:
+  - name: raw_customers
+    description: Raw customer master data
+    physicalType: table
+    properties:
+      - name: customer_id
+        logicalType: integer
+        physicalType: NUMBER
+        primaryKey: true
+        required: true
+        description: Unique customer identifier
+      - name: name
+        logicalType: string
+        physicalType: VARCHAR
+        required: true
+        description: Customer full name
+      - name: email
+        logicalType: string
+        physicalType: VARCHAR
+        required: true
+        unique: true
+        description: Customer email address
+      - name: status
+        logicalType: string
+        physicalType: VARCHAR
+        description: Customer account status

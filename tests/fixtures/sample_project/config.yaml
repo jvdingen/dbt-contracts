@@ -1,0 +1,6 @@
+project_name: sample-project
+default_server_type: snowflake
+generation:
+  models_dir: models/generated
+  generate_sources: true
+  generate_tests: true
