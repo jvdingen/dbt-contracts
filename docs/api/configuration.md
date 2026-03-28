@@ -1,3 +1,3 @@
 # Configuration
 
-::: dbt_contracts.models
+::: dbt_contracts.models.config

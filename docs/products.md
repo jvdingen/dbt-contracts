@@ -100,6 +100,22 @@ The `content` field must be one of: `discoverability`, `observability`, `control
 
 When you run `dbt-contracts validate`, dbt-contracts checks that all `contractId` references in your product files resolve to actual ODCS contract files in `contracts/contracts/`. This ensures your product definitions and contracts stay in sync.
 
+## Python model
+
+ODPS files are parsed and validated using the `OpenDataProductStandard` Pydantic model. This model is hand-rolled from the ODPS v1.0.0 specification, following the same patterns as the official ODCS Python SDK.
+
+Shared types (`Team`, `Support`, `Description`, `CustomProperty`, `AuthoritativeDefinition`) are reused directly from the ODCS SDK to ensure consistency between contract and product definitions.
+
+```python
+from dbt_contracts.models import OpenDataProductStandard
+
+product = OpenDataProductStandard.from_file("contracts/products/orders.odps.yaml")
+print(product.name)
+print(product.outputPorts[0].contractId)
+```
+
+See the [API reference](api/contracts.md) for the full model definition.
+
 ## Full example
 
 See the [ODPS specification](https://bitol-io.github.io/open-data-product-standard/v1.0.0/) for a comprehensive example with all supported fields.
