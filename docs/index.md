@@ -1,50 +1,45 @@
 # dbt-contracts
 
-**Generate and manage dbt projects through Bitol ODCS/ODPS data contracts.**
+**Contract-first dbt development using open standards.**
 
-dbt-contracts brings contract-first development to the dbt ecosystem. Define your data contracts using the [Open Data Contract Standard (ODCS)](https://bitol-io.github.io/open-data-contract-standard/v3.1.0/) and data products using the [Open Data Product Standard (ODPS)](https://bitol-io.github.io/open-data-product-standard/v1.0.0/), then generate fully-configured dbt projects from them.
+dbt-contracts generates and manages dbt projects from data contracts. Define your data shape, quality rules, and lineage in ODCS/ODPS YAML files, and let dbt-contracts produce the models, sources, staging SQL, and tests.
 
-## Why contract-first?
+## The workflow
 
-Traditional dbt development starts with models and adds documentation and tests after the fact. Contract-first development flips this: you define the contract — the shape of the data, its quality rules, ownership, and SLAs — before writing any SQL. This means:
-
-- **Alignment before code** — Producers and consumers agree on the data shape upfront.
-- **Automated scaffolding** — dbt models, schema files, and tests are generated from contracts.
-- **Drift detection** — Ensure your dbt project stays in sync with its contracts over time.
-- **Standards-based** — Built on open standards (ODCS, ODPS) backed by the Linux Foundation.
-
-## Quick start
-
-```bash
-# Install
-pip install dbt-contracts
-
-# Initialize contracts in an existing dbt project
-dbt-contracts init
-
-# Validate your contracts
-dbt-contracts validate
-
-# Generate dbt models from contracts
-dbt-contracts generate
+```
+  Define          Validate         Generate         Maintain
+  ┌──────┐       ┌──────────┐     ┌──────────┐     ┌──────────┐
+  │ ODCS │──────>│ validate │────>│ generate │────>│ diff     │
+  │ ODPS │       │          │     │          │     │ sync     │
+  └──────┘       └──────────┘     └──────────┘     └──────────┘
+  Contracts       Schema lint      models/*.yml     Detect drift
+  & products      Cross-refs       sources/*.yml    Apply changes
+                  Status check     stg_*.sql
 ```
 
-## Features
+Or start from the other direction --- import existing dbt `schema.yml` files as contract stubs using `dbt-contracts import`.
 
-| Feature | Description |
+## Key concepts
+
+**Data contracts (ODCS)** define the promise about your data: what columns exist, their types, quality rules, who owns it, and what SLAs apply. Each contract maps to one or more dbt models or sources.
+
+**Data products (ODPS)** define how data flows between systems. Input ports reference source contracts, output ports reference model contracts. This lineage determines whether generated SQL uses `{{ source() }}` or `{{ ref() }}`.
+
+**Configuration** (`config.yaml`) controls generation behavior: output directories, whether to include tests, validation settings, and the default server type.
+
+## Guides
+
+| Guide | What you'll learn |
 |---|---|
-| **Contract validation** | Parse and validate ODCS contracts and ODPS product definitions |
-| **dbt generation** | Generate models, schema.yml, sources, and staging SQL from contracts |
-| **Quality mapping** | Automatically map ODCS quality checks to dbt tests |
-| **Project init** | Scaffold a `contracts/` directory in any dbt project |
-| **Drift detection** | Compare dbt models against their contracts with `diff` |
-| **Sync & import** | Sync contracts to dbt, or import existing dbt schemas as contracts |
+| [Getting Started](getting-started.md) | Install, create your first contract, generate dbt models |
+| [Contracts](contracts.md) | Writing ODCS contracts: schema, quality, servers, team |
+| [Products](products.md) | Writing ODPS products: ports, lineage, cross-references |
+| [Configuration](configuration.md) | All `config.yaml` options and defaults |
 
-## Next steps
+## Reference
 
-- [Getting Started](getting-started.md) — Installation and first steps
-- [CLI Reference](cli.md) — All available commands
-- [Contracts Guide](contracts.md) — Writing ODCS contracts
-- [Products Guide](products.md) — Writing ODPS data products
-- [Configuration](configuration.md) — Configuring dbt-contracts
-- [Architecture](architecture.md) — How it works under the hood
+| Reference | What's covered |
+|---|---|
+| [CLI](cli.md) | All commands, options, flags, and exit codes |
+| [Architecture](architecture.md) | How it works: discovery, validation, rendering, generation |
+| [Troubleshooting](troubleshooting.md) | Common issues and solutions |
