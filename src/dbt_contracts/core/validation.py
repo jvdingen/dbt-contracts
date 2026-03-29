@@ -77,30 +77,20 @@ def validate(discovery: DiscoveryResult) -> ValidationResult:
     # 2. Cross-reference: ODPS contractId -> ODCS contracts
     if cross_reference:
         for dp in discovery.products:
-            for port in dp.product.inputPorts or []:
-                if port.contractId and port.contractId not in contract_ids:
-                    issues.append(
-                        ValidationIssue(
-                            path=str(dp.path),
-                            contract_id=dp.product.id,
-                            message=(
-                                "inputPort references unknown contract:"
-                                f" {port.contractId}"
-                            ),
+            for port_type in ("inputPorts", "outputPorts"):
+                for port in getattr(dp.product, port_type, None) or []:
+                    if port.contractId and port.contractId not in contract_ids:
+                        label = port_type.rstrip("s")
+                        issues.append(
+                            ValidationIssue(
+                                path=str(dp.path),
+                                contract_id=dp.product.id,
+                                message=(
+                                    f"{label} references unknown contract:"
+                                    f" {port.contractId}"
+                                ),
+                            )
                         )
-                    )
-            for port in dp.product.outputPorts or []:
-                if port.contractId and port.contractId not in contract_ids:
-                    issues.append(
-                        ValidationIssue(
-                            path=str(dp.path),
-                            contract_id=dp.product.id,
-                            message=(
-                                "outputPort references unknown contract:"
-                                f" {port.contractId}"
-                            ),
-                        )
-                    )
 
     return ValidationResult(issues=issues)
 

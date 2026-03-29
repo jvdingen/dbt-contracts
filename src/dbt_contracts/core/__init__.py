@@ -9,7 +9,12 @@ from dbt_contracts.core.discovery import (
     DiscoveryResult,
     discover,
 )
-from dbt_contracts.core.generator import GeneratedFile, GenerateResult, generate
+from dbt_contracts.core.generator import (
+    GeneratedFile,
+    GenerateResult,
+    generate,
+    to_yaml,
+)
 from dbt_contracts.core.importer import ImportedContract, ImportResult, import_dbt
 from dbt_contracts.core.init import InitResult, init
 from dbt_contracts.core.validation import ValidationIssue, ValidationResult, validate
@@ -29,14 +34,15 @@ __all__ = [
     "ImportedContract",
     "InitResult",
     "LintResult",
+    "ValidationIssue",
+    "ValidationResult",
     "diff",
     "discover",
     "generate",
     "import_dbt",
     "init",
-    "ValidationIssue",
-    "ValidationResult",
     "lint",
     "render",
+    "to_yaml",
     "validate",
 ]

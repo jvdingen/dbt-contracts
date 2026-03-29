@@ -172,6 +172,20 @@ Parses dbt schema YAML (sources and models), generates ODCS contract stubs with 
 ### Init (`core/init.py`)
 Scaffolds `contracts/` directory with config template, detects `dbt_project.yml`.
 
+## Future: Governance Integration (Phase 8)
+
+Goal: keep local contract files in sync with contracts defined in external governance tooling (Atlan, Collibra, DataHub, OpenMetadata, etc.).
+
+**Approach:** Start with a pull model where the governance tool is the source of truth.
+
+- `dbt-contracts pull` fetches ODCS/ODPS definitions from a governance platform and writes them to `contracts/`
+- `dbt-contracts push` publishes local contracts to a governance platform after validation
+- Pluggable backend system so different governance tools can be supported via adapters
+- Config extension: `governance.backend`, `governance.url`, `governance.project` etc.
+- CI workflow: `pull` → `generate` → `diff` → block on drift
+
+This phase is not yet started. The local-file workflow (define → validate → generate → diff → sync) is complete.
+
 ## just Commands
 
 | Command | Description |

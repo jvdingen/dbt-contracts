@@ -7,11 +7,55 @@ import click
 
 from dbt_contracts import __version__
 from dbt_contracts.core.differ import diff
-from dbt_contracts.core.discovery import DiscoveryError, discover
+from dbt_contracts.core.discovery import DiscoveryError, DiscoveryResult, discover
 from dbt_contracts.core.generator import generate
 from dbt_contracts.core.importer import import_dbt
 from dbt_contracts.core.init import init
 from dbt_contracts.core.validation import validate
+from dbt_contracts.models.config import Config
+
+# Reusable CLI options
+contracts_dir_option = click.option(
+    "--contracts-dir",
+    default="contracts",
+    help="Path to the contracts directory.",
+    type=click.Path(),
+)
+models_dir_option = click.option(
+    "--models-dir",
+    default=None,
+    help="Override models output directory.",
+)
+sources_dir_option = click.option(
+    "--sources-dir",
+    default=None,
+    help="Override sources output directory.",
+)
+
+
+def _discover_or_exit(contracts_dir: str) -> DiscoveryResult:
+    """Run discovery, exiting on error."""
+    try:
+        return discover(contracts_dir)
+    except DiscoveryError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+def _resolve_output_base(contracts_dir: str, config: Config) -> Path:
+    """Resolve the dbt project root from contracts dir and config."""
+    return Path(contracts_dir) / (config.dbt_project_dir or "..")
+
+
+def _print_validation_errors(result) -> None:
+    """Print validation issues and exit."""
+    click.echo(f"Validation failed with {len(result.issues)} issue(s):\n")
+    for issue in result.issues:
+        location = issue.path
+        if issue.contract_id:
+            location = f"{issue.path} ({issue.contract_id})"
+        click.echo(f"  {location}: {issue.message}")
+    sys.exit(1)
 
 
 @click.group()
@@ -26,20 +70,11 @@ def version():
     click.echo(f"dbt-contracts {__version__}")
 
 
-@cli.command()
-@click.option(
-    "--contracts-dir",
-    default="contracts",
-    help="Path to the contracts directory.",
-    type=click.Path(),
-)
+@cli.command("validate")
+@contracts_dir_option
 def validate_cmd(contracts_dir):
     """Validate all contracts and products."""
-    try:
-        discovery = discover(contracts_dir)
-    except DiscoveryError as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+    discovery = _discover_or_exit(contracts_dir)
 
     n_contracts = len(discovery.contracts)
     n_products = len(discovery.products)
@@ -50,36 +85,13 @@ def validate_cmd(contracts_dir):
     if result.passed:
         click.echo("Validation passed.")
     else:
-        click.echo(f"Validation failed with {len(result.issues)} issue(s):\n")
-        for issue in result.issues:
-            location = issue.path
-            if issue.contract_id:
-                location = f"{issue.path} ({issue.contract_id})"
-            click.echo(f"  {location}: {issue.message}")
-        sys.exit(1)
+        _print_validation_errors(result)
 
 
-# Register with the name 'validate' (validate_cmd avoids shadowing the import)
-validate_cmd.name = "validate"
-
-
-@cli.command()
-@click.option(
-    "--contracts-dir",
-    default="contracts",
-    help="Path to the contracts directory.",
-    type=click.Path(),
-)
-@click.option(
-    "--models-dir",
-    default=None,
-    help="Override models output directory.",
-)
-@click.option(
-    "--sources-dir",
-    default=None,
-    help="Override sources output directory.",
-)
+@cli.command("generate")
+@contracts_dir_option
+@models_dir_option
+@sources_dir_option
 @click.option(
     "--force",
     is_flag=True,
@@ -99,21 +111,14 @@ def generate_cmd(
     contracts_dir, models_dir, sources_dir, force, dry_run, skip_validation
 ):
     """Generate dbt models, sources, and SQL from contracts."""
-    try:
-        discovery = discover(contracts_dir)
-    except DiscoveryError as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+    discovery = _discover_or_exit(contracts_dir)
 
     if not skip_validation:
         result = validate(discovery)
         if not result.passed:
-            click.echo(f"Validation failed with {len(result.issues)} issue(s):")
-            for issue in result.issues:
-                click.echo(f"  {issue.path}: {issue.message}")
-            sys.exit(1)
+            _print_validation_errors(result)
 
-    output_base = Path(contracts_dir) / (discovery.config.dbt_project_dir or "..")
+    output_base = _resolve_output_base(contracts_dir, discovery.config)
 
     gen_result = generate(
         discovery,
@@ -141,10 +146,7 @@ def generate_cmd(
         )
 
 
-generate_cmd.name = "generate"
-
-
-@cli.command()
+@cli.command("init")
 @click.option(
     "--dir",
     "target_dir",
@@ -179,26 +181,10 @@ def init_cmd(target_dir, force):
     )
 
 
-init_cmd.name = "init"
-
-
-@cli.command()
-@click.option(
-    "--contracts-dir",
-    default="contracts",
-    help="Path to the contracts directory.",
-    type=click.Path(),
-)
-@click.option(
-    "--models-dir",
-    default=None,
-    help="Override models output directory.",
-)
-@click.option(
-    "--sources-dir",
-    default=None,
-    help="Override sources output directory.",
-)
+@cli.command("diff")
+@contracts_dir_option
+@models_dir_option
+@sources_dir_option
 @click.option(
     "--format",
     "output_format",
@@ -208,13 +194,8 @@ init_cmd.name = "init"
 )
 def diff_cmd(contracts_dir, models_dir, sources_dir, output_format):
     """Show drift between contracts and the current dbt project."""
-    try:
-        discovery = discover(contracts_dir)
-    except DiscoveryError as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
-
-    output_base = Path(contracts_dir) / (discovery.config.dbt_project_dir or "..")
+    discovery = _discover_or_exit(contracts_dir)
+    output_base = _resolve_output_base(contracts_dir, discovery.config)
 
     result = diff(
         discovery,
@@ -245,26 +226,10 @@ def diff_cmd(contracts_dir, models_dir, sources_dir, output_format):
         sys.exit(1)
 
 
-diff_cmd.name = "diff"
-
-
-@cli.command()
-@click.option(
-    "--contracts-dir",
-    default="contracts",
-    help="Path to the contracts directory.",
-    type=click.Path(),
-)
-@click.option(
-    "--models-dir",
-    default=None,
-    help="Override models output directory.",
-)
-@click.option(
-    "--sources-dir",
-    default=None,
-    help="Override sources output directory.",
-)
+@cli.command("sync")
+@contracts_dir_option
+@models_dir_option
+@sources_dir_option
 @click.option(
     "--yes",
     is_flag=True,
@@ -272,13 +237,8 @@ diff_cmd.name = "diff"
 )
 def sync_cmd(contracts_dir, models_dir, sources_dir, yes):
     """Sync dbt project with contracts (apply diff)."""
-    try:
-        discovery = discover(contracts_dir)
-    except DiscoveryError as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
-
-    output_base = Path(contracts_dir) / (discovery.config.dbt_project_dir or "..")
+    discovery = _discover_or_exit(contracts_dir)
+    output_base = _resolve_output_base(contracts_dir, discovery.config)
 
     result = diff(
         discovery,
@@ -300,18 +260,14 @@ def sync_cmd(contracts_dir, models_dir, sources_dir, yes):
     if not yes:
         click.confirm("Apply these changes?", abort=True)
 
-    gen_result = generate(
-        discovery,
-        output_base=output_base,
-        models_dir=models_dir,
-        sources_dir=sources_dir,
-        force=True,
-    )
+    # Write files directly from diff result instead of re-running generate
+    written = 0
+    for d in result.new_files + result.modified_files:
+        d.path.parent.mkdir(parents=True, exist_ok=True)
+        d.path.write_text(d.expected_content, encoding="utf-8")
+        written += 1
 
-    click.echo(f"\n{len(gen_result.written)} file(s) written.")
-
-
-sync_cmd.name = "sync"
+    click.echo(f"\n{written} file(s) written.")
 
 
 @cli.command("import")

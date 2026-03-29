@@ -52,9 +52,7 @@ def init(
 
 
 def _detect_dbt_project_dir(target_dir: Path) -> str:
-    """Detect dbt_project.yml and return relative path to project root."""
-    if (target_dir / "dbt_project.yml").exists():
-        return ".."
+    """Return relative path from contracts/ to the dbt project root."""
     return ".."
 
 

@@ -7,6 +7,8 @@ from pathlib import Path
 import pydantic as pyd
 import yaml
 
+from dbt_contracts.core.generator import to_yaml
+
 
 class ImportedContract(pyd.BaseModel):
     """A contract stub generated from a dbt YAML file."""
@@ -49,14 +51,14 @@ def import_dbt(
             contract = _source_to_contract(source, server_type)
             name = source.get("name", "source")
             path = output_dir / f"{name}.odcs.yaml"
-            content = yaml.dump(contract, sort_keys=False, allow_unicode=True)
+            content = to_yaml(contract)
             contracts.append(ImportedContract(path=path, content=content))
 
         for model in data.get("models", []):
             contract = _model_to_contract(model, server_type)
             name = model.get("name", "model")
             path = output_dir / f"{name}.odcs.yaml"
-            content = yaml.dump(contract, sort_keys=False, allow_unicode=True)
+            content = to_yaml(contract)
             contracts.append(ImportedContract(path=path, content=content))
 
     if not dry_run:
