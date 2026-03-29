@@ -25,7 +25,12 @@ nav = [
         ]},
     ]},
     {"Help" = [
-        {"Troubleshooting" = "troubleshooting.md"},
+        {"Overview" = "help/index.md"},
+        {"Setup" = "help/setup.md"},
+        {"Contracts & Products" = "help/contracts-and-products.md"},
+        {"Generation" = "help/generation.md"},
+        {"Drift & Sync" = "help/drift-and-sync.md"},
+        {"Import" = "help/import.md"},
     ]},
 ]
 
