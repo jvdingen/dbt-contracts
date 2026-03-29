@@ -43,3 +43,6 @@ Thumbs.db
 # Environment variables
 .env
 .env.*
+
+# Blogs about this project
+blogs
