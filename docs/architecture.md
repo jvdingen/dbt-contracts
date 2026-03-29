@@ -6,51 +6,11 @@ This document describes how dbt-contracts works under the hood.
 
 dbt-contracts is a pipeline that reads data contract definitions and produces dbt project artifacts:
 
-```
-ODCS Contracts (.odcs.yaml)  ─┐
-                               ├─→ Validate ─→ Generate ─→ dbt Project
-ODPS Products (.odps.yaml)   ─┘
-```
+![Data flow overview](assets/data-flow-overview.svg)
 
 ## Component architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│                  CLI (click)                     │
-│  dbt-contracts                                   │
-├─────────────────────────────────────────────────┤
-│                  Core                            │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
-│  │ Discovery│  │Validation│  │  Generation    │  │
-│  │ Scan &   │  │ Schema   │  │ Post-process  │  │
-│  │ load     │  │ & xref   │  │ & write files │  │
-│  └──────────┘  └──────────┘  └───────────────┘  │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
-│  │  Differ  │  │  Init    │  │  Importer     │  │
-│  │ Drift    │  │ Scaffold │  │ dbt → ODCS    │  │
-│  │ detect   │  │ project  │  │ contracts     │  │
-│  └──────────┘  └──────────┘  └───────────────┘  │
-│  ┌────────────────────────────────────────────┐  │
-│  │              Adapter                        │  │
-│  │  lint() ─ ODCS validation                   │  │
-│  │  render() ─ lineage-aware dbt generation    │  │
-│  │  Wraps datacontract-cli exporters           │  │
-│  └────────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────┤
-│                  Models                          │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
-│  │ Config   │  │ ODPS     │  │ ODCS (SDK)    │  │
-│  │ (custom) │  │ (custom) │  │               │  │
-│  └──────────┘  └──────────┘  └───────────────┘  │
-├─────────────────────────────────────────────────┤
-│             External Libraries                   │
-│  ┌──────────────────┐  ┌──────────────────────┐  │
-│  │ datacontract-cli │  │ open-data-contract-  │  │
-│  │ (dbt exporters,  │  │ standard (ODCS SDK)  │  │
-│  │  linting)        │  │                      │  │
-│  └──────────────────┘  └──────────────────────┘  │
-└─────────────────────────────────────────────────┘
-```
+![Component architecture](assets/component-architecture.svg)
 
 ## Data flow
 

@@ -6,16 +6,7 @@ dbt-contracts generates and manages dbt projects from data contracts. Define you
 
 ## The workflow
 
-```
-  Define          Validate         Generate         Maintain
-  ┌──────┐       ┌──────────┐     ┌──────────┐     ┌──────────┐
-  │ ODCS │──────>│ validate │────>│ generate │────>│ diff     │
-  │ ODPS │       │          │     │          │     │ sync     │
-  └──────┘       └──────────┘     └──────────┘     └──────────┘
-  Contracts       Schema lint      models/*.yml     Detect drift
-  & products      Cross-refs       sources/*.yml    Apply changes
-                  Status check     stg_*.sql
-```
+![Workflow overview](assets/workflow-overview.svg)
 
 Or start from the other direction --- import existing dbt `schema.yml` files as contract stubs using `dbt-contracts import`.
 
@@ -27,19 +18,10 @@ Or start from the other direction --- import existing dbt `schema.yml` files as 
 
 **Configuration** (`config.yaml`) controls generation behavior: output directories, whether to include tests, validation settings, and the default server type.
 
-## Guides
+## Quick links
 
-| Guide | What you'll learn |
-|---|---|
-| [Getting Started](getting-started.md) | Install, create your first contract, generate dbt models |
-| [Contracts](contracts.md) | Writing ODCS contracts: schema, quality, servers, team |
-| [Products](products.md) | Writing ODPS products: ports, lineage, cross-references |
-| [Configuration](configuration.md) | All `config.yaml` options and defaults |
-
-## Reference
-
-| Reference | What's covered |
-|---|---|
-| [CLI](cli.md) | All commands, options, flags, and exit codes |
-| [Architecture](architecture.md) | How it works: discovery, validation, rendering, generation |
-| [Troubleshooting](troubleshooting.md) | Common issues and solutions |
+- [Getting Started](getting-started.md) --- install, first contract, generate dbt models
+- [Writing Contracts](contracts.md) --- ODCS schema, quality, servers, team
+- [Data Products](products.md) --- ODPS ports, lineage, cross-references
+- [CLI Reference](cli.md) --- all commands, options, and flags
+- [Architecture](architecture.md) --- how it works under the hood

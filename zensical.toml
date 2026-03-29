@@ -5,6 +5,30 @@ site_author = "Joeri Van Dingenen"
 copyright = "Copyright &copy; 2026 Joeri Van Dingenen"
 repo_url = "https://github.com/jvdingen/dbt-contracts"
 
+nav = [
+    {"Home" = "index.md"},
+    {"Getting Started" = "getting-started.md"},
+    {"Guides" = [
+        {"Writing Contracts" = "contracts.md"},
+        {"Data Products" = "products.md"},
+        {"Configuration" = "configuration.md"},
+    ]},
+    {"Reference" = [
+        {"CLI" = "cli.md"},
+        {"Architecture" = "architecture.md"},
+        {"API" = [
+            {"Overview" = "api/index.md"},
+            {"CLI" = "api/cli.md"},
+            {"Configuration" = "api/configuration.md"},
+            {"Contracts" = "api/contracts.md"},
+            {"Generation" = "api/generation.md"},
+        ]},
+    ]},
+    {"Help" = [
+        {"Troubleshooting" = "troubleshooting.md"},
+    ]},
+]
+
 [project.theme]
 language = "en"
 icon.logo = "lucide/file-check"
@@ -15,6 +39,7 @@ features = [
     "navigation.footer",
     "navigation.instant",
     "navigation.path",
+    "navigation.sections",
     "navigation.tabs",
     "navigation.top",
     "navigation.tracking",

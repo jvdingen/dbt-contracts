@@ -10,12 +10,7 @@ dbt-contracts uses the [Open Data Product Standard (ODPS) v1.0.0](https://bitol-
 
 ## Relationship to contracts
 
-```
-DataProduct (ODPS)
-├── InputPort  → references ODCS contract (source data)
-├── OutputPort → references ODCS contract (exposed data)
-└── ManagementPort → observability, control, discovery
-```
+![Port relationships](assets/port-relationship.svg)
 
 A data product describes **what** is being delivered and **how**, while contracts describe the **promise** about the data itself.
 
